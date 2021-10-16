@@ -1,0 +1,234 @@
+---
+categories:  
+- ""    #the front matter should be like the one found in, e.g., blog2.md. It cannot be like the normal Rmd we used
+- ""
+date: "2021-09-30"
+description: A time series data decription example # the title that will show up once someone gets to this page
+draft: false
+image: pic08.jpg # save picture in \static\img\blogs. Acceptable formats= jpg, jpeg, or png . Your iPhone pics wont work
+
+keywords: ""
+slug: data_decription_example # slug is the shorthand URL address... no spaces plz
+title: A time series data decription example
+---
+
+<script src="data processing example_files/header-attrs/header-attrs.js"></script>
+
+
+<pre class="r"><code>library(tseries)</code></pre>
+<pre><code>## Registered S3 method overwritten by &#39;quantmod&#39;:
+##   method            from
+##   as.zoo.data.frame zoo</code></pre>
+<pre class="r"><code>library(readxl)
+library(vars)</code></pre>
+<pre><code>## Loading required package: MASS</code></pre>
+<pre><code>## Loading required package: strucchange</code></pre>
+<pre><code>## Loading required package: zoo</code></pre>
+<pre><code>## 
+## Attaching package: &#39;zoo&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:base&#39;:
+## 
+##     as.Date, as.Date.numeric</code></pre>
+<pre><code>## Loading required package: sandwich</code></pre>
+<pre><code>## Loading required package: urca</code></pre>
+<pre><code>## Loading required package: lmtest</code></pre>
+<pre class="r"><code>library(forecast)
+library(strucchange)
+data &lt;- read_excel(here::here(&quot;data&quot;,&quot;mydata.xlsx&quot;), sheet = 1)
+brent &lt;- ts(data$brent, frequency = 12, start = c(1998,11), end=c(2020,12))
+tasi &lt;-  ts(data$tasi, frequency = 12, start = c(1998,11), end=c(2020,12))
+price &lt;- ts.union(tasi,brent)
+
+brent.ret &lt;- ts(diff(log(brent))[-1], frequency = 12, start = c(1998,12), end=c(2020,12))
+tasi.ret &lt;-  ts(diff(log(tasi))[-1], frequency = 12, start = c(1998,12), end=c(2020,12))
+ret &lt;- as.matrix(ts.union(tasi.ret,brent.ret))</code></pre>
+<pre class="r"><code>mean(tasi)</code></pre>
+<pre><code>## [1] 6736.762</code></pre>
+<pre class="r"><code>mean(brent)</code></pre>
+<pre><code>## [1] 61.01128</code></pre>
+<pre class="r"><code>mean(tasi.ret)</code></pre>
+<pre><code>## [1] 0.006863528</code></pre>
+<pre class="r"><code>mean(brent.ret)</code></pre>
+<pre><code>## [1] 0.006606892</code></pre>
+<pre class="r"><code>sd(tasi)</code></pre>
+<pre><code>## [1] 3210.516</code></pre>
+<pre class="r"><code>sd(brent)</code></pre>
+<pre><code>## [1] 30.80696</code></pre>
+<pre class="r"><code>sd(tasi.ret)</code></pre>
+<pre><code>## [1] 0.06978078</code></pre>
+<pre class="r"><code>sd(brent.ret)</code></pre>
+<pre><code>## [1] 0.1088124</code></pre>
+<pre class="r"><code>library(moments)
+skewness(tasi)</code></pre>
+<pre><code>## [1] 0.668019</code></pre>
+<pre class="r"><code>skewness(brent)</code></pre>
+<pre><code>## [1] 0.4326292</code></pre>
+<pre class="r"><code>skewness(tasi.ret)</code></pre>
+<pre><code>## [1] -0.798697</code></pre>
+<pre class="r"><code>skewness(brent.ret)</code></pre>
+<pre><code>## [1] -1.107184</code></pre>
+<pre class="r"><code>kurtosis(tasi)</code></pre>
+<pre><code>## [1] 4.656147</code></pre>
+<pre class="r"><code>kurtosis(brent)</code></pre>
+<pre><code>## [1] 2.158053</code></pre>
+<pre class="r"><code>kurtosis(tasi.ret)</code></pre>
+<pre><code>## [1] 5.144996</code></pre>
+<pre class="r"><code>kurtosis(brent.ret)</code></pre>
+<pre><code>## [1] 8.874933</code></pre>
+<pre class="r"><code>adf.test(tasi)</code></pre>
+<pre><code>## 
+##  Augmented Dickey-Fuller Test
+## 
+## data:  tasi
+## Dickey-Fuller = -2.7954, Lag order = 6, p-value = 0.2409
+## alternative hypothesis: stationary</code></pre>
+<pre class="r"><code>adf.test(brent)</code></pre>
+<pre><code>## 
+##  Augmented Dickey-Fuller Test
+## 
+## data:  brent
+## Dickey-Fuller = -1.9028, Lag order = 6, p-value = 0.6169
+## alternative hypothesis: stationary</code></pre>
+<pre class="r"><code>adf.test(tasi.ret)</code></pre>
+<pre><code>## Warning in adf.test(tasi.ret): p-value smaller than printed p-value</code></pre>
+<pre><code>## 
+##  Augmented Dickey-Fuller Test
+## 
+## data:  tasi.ret
+## Dickey-Fuller = -5.3077, Lag order = 6, p-value = 0.01
+## alternative hypothesis: stationary</code></pre>
+<pre class="r"><code>adf.test(brent.ret)</code></pre>
+<pre><code>## Warning in adf.test(brent.ret): p-value smaller than printed p-value</code></pre>
+<pre><code>## 
+##  Augmented Dickey-Fuller Test
+## 
+## data:  brent.ret
+## Dickey-Fuller = -6.4665, Lag order = 6, p-value = 0.01
+## alternative hypothesis: stationary</code></pre>
+<pre class="r"><code>cor(price)</code></pre>
+<pre><code>##            tasi     brent
+## tasi  1.0000000 0.5099275
+## brent 0.5099275 1.0000000</code></pre>
+<pre class="r"><code>cor(ret)</code></pre>
+<pre><code>##            tasi.ret brent.ret
+## tasi.ret  1.0000000 0.2580756
+## brent.ret 0.2580756 1.0000000</code></pre>
+<pre class="r"><code>Box.test(tasi,type=&quot;Ljung-Box&quot;,lag=6)</code></pre>
+<pre><code>## 
+##  Box-Ljung test
+## 
+## data:  tasi
+## X-squared = 1301, df = 6, p-value &lt; 2.2e-16</code></pre>
+<pre class="r"><code>Box.test(brent,type=&quot;Ljung-Box&quot;,lag=6)</code></pre>
+<pre><code>## 
+##  Box-Ljung test
+## 
+## data:  brent
+## X-squared = 1289.3, df = 6, p-value &lt; 2.2e-16</code></pre>
+<pre class="r"><code>Box.test(tasi.ret,type=&quot;Ljung-Box&quot;,lag=6)</code></pre>
+<pre><code>## 
+##  Box-Ljung test
+## 
+## data:  tasi.ret
+## X-squared = 12.517, df = 6, p-value = 0.05138</code></pre>
+<pre class="r"><code>Box.test(brent.ret,type=&quot;Ljung-Box&quot;,lag=6)</code></pre>
+<pre><code>## 
+##  Box-Ljung test
+## 
+## data:  brent.ret
+## X-squared = 21.185, df = 6, p-value = 0.001699</code></pre>
+<pre class="r"><code>library(&quot;FinTS&quot;)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;FinTS&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:forecast&#39;:
+## 
+##     Acf</code></pre>
+<pre class="r"><code>ArchTest (tasi, lags=6, demean = FALSE) </code></pre>
+<pre><code>## 
+##  ARCH LM-test; Null hypothesis: no ARCH effects
+## 
+## data:  tasi
+## Chi-squared = 242.16, df = 6, p-value &lt; 2.2e-16</code></pre>
+<pre class="r"><code>ArchTest (brent, lags=6, demean = FALSE)</code></pre>
+<pre><code>## 
+##  ARCH LM-test; Null hypothesis: no ARCH effects
+## 
+## data:  brent
+## Chi-squared = 250.72, df = 6, p-value &lt; 2.2e-16</code></pre>
+<pre class="r"><code>ArchTest (tasi.ret, lags=6, demean = FALSE)</code></pre>
+<pre><code>## 
+##  ARCH LM-test; Null hypothesis: no ARCH effects
+## 
+## data:  tasi.ret
+## Chi-squared = 38.904, df = 6, p-value = 7.475e-07</code></pre>
+<pre class="r"><code>ArchTest (brent.ret, lags=6, demean = FALSE)</code></pre>
+<pre><code>## 
+##  ARCH LM-test; Null hypothesis: no ARCH effects
+## 
+## data:  brent.ret
+## Chi-squared = 134.22, df = 6, p-value &lt; 2.2e-16</code></pre>
+<pre class="r"><code># store the breakpoints
+bp &lt;- breakpoints(brent ~ 1)
+summary(bp)</code></pre>
+<pre><code>## 
+##   Optimal (m+1)-segment partition: 
+## 
+## Call:
+## breakpoints.formula(formula = brent ~ 1)
+## 
+## Breakpoints at observation number:
+##                           
+## m = 1   76                
+## m = 2   81         193    
+## m = 3   76     145 192    
+## m = 4   68 107 146 192    
+## m = 5   68 107 146 188 227
+## 
+## Corresponding to breakdates:
+##                                                  
+## m = 1   2005(2)                                  
+## m = 2   2005(7)                  2014(11)        
+## m = 3   2005(2)         2010(11) 2014(10)        
+## m = 4   2004(6) 2007(9) 2010(12) 2014(10)        
+## m = 5   2004(6) 2007(9) 2010(12) 2014(6)  2017(9)
+## 
+## Fit:
+##                                              
+## m   0      1      2      3      4      5     
+## RSS 251503 129714  80016  45677  40757  46994
+## BIC   2589   2424   2306   2168   2149   2198</code></pre>
+<pre class="r"><code>par(mfrow = c(1, 1), mar = c(2.2, 2.2, 1, 2.2), cex = 0.8)
+#plot.ts(cbind(tasi, brent, wti), plot.type = &quot;single&quot;, ylab = &quot;&quot;, col = 4:3)
+#legend(&quot;topleft&quot;, legend = c(&quot;TASI&quot;, &quot;Brent&quot;, &quot;Wti&quot;), col = 4:3, lty = 1, bty = &quot;n&quot;)
+
+## the BIC chooses 5 breakpoints; plot the graph with breakdates and their confidence intervals
+plot(bp)</code></pre>
+<p><img src="/blogs/data%20processing%20example_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
+<pre class="r"><code>plot(brent,plot.type = &quot;single&quot;, ylab = &quot;&quot;, col = 4:3)
+lines(bp)
+
+## confidence intervals
+ci &lt;- confint(bp)
+ci</code></pre>
+<pre><code>## 
+##   Confidence intervals for breakpoints
+##   of optimal 5-segment partition: 
+## 
+## Call:
+## confint.breakpointsfull(object = bp)
+## 
+## Breakpoints at observation number:
+##   2.5 % breakpoints 97.5 %
+## 1    66          68     69
+## 2    93         107    109
+## 3   145         146    153
+## 4   191         192    193
+## 
+## Corresponding to breakdates:
+##   2.5 %    breakpoints 97.5 %  
+## 1 2004(4)  2004(6)     2004(7) 
+## 2 2006(7)  2007(9)     2007(11)
+## 3 2010(11) 2010(12)    2011(7) 
+## 4 2014(9)  2014(10)    2014(11)</code></pre>
+<pre class="r"><code>lines(ci)</code></pre>
+<p><img src="/blogs/data%20processing%20example_files/figure-html/unnamed-chunk-10-2.png" width="672" /></p>

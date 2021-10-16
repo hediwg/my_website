@@ -1,0 +1,104 @@
+---
+categories:  
+- ""    #the front matter should be like the one found in, e.g., blog2.md. It cannot be like the normal Rmd we used
+- ""
+date: "2021-09-30"
+description: A time series data decription example # the title that will show up once someone gets to this page
+draft: false
+image: pic08.jpg # save picture in \static\img\blogs. Acceptable formats= jpg, jpeg, or png . Your iPhone pics wont work
+
+keywords: ""
+slug: data_decription_example # slug is the shorthand URL address... no spaces plz
+title: A time series data decription example
+---
+
+```{r}
+library(tseries)
+library(readxl)
+library(vars)
+library(forecast)
+library(strucchange)
+data <- read_excel(here::here("data","mydata.xlsx"), sheet = 1)
+brent <- ts(data$brent, frequency = 12, start = c(1998,11), end=c(2020,12))
+tasi <-  ts(data$tasi, frequency = 12, start = c(1998,11), end=c(2020,12))
+price <- ts.union(tasi,brent)
+
+brent.ret <- ts(diff(log(brent))[-1], frequency = 12, start = c(1998,12), end=c(2020,12))
+tasi.ret <-  ts(diff(log(tasi))[-1], frequency = 12, start = c(1998,12), end=c(2020,12))
+ret <- as.matrix(ts.union(tasi.ret,brent.ret))
+```
+
+```{r}
+mean(tasi)
+mean(brent)
+mean(tasi.ret)
+mean(brent.ret)
+```
+```{r}
+sd(tasi)
+sd(brent)
+sd(tasi.ret)
+sd(brent.ret)
+```
+
+```{r}
+library(moments)
+skewness(tasi)
+skewness(brent)
+skewness(tasi.ret)
+skewness(brent.ret)
+kurtosis(tasi)
+kurtosis(brent)
+kurtosis(tasi.ret)
+kurtosis(brent.ret)
+```
+
+```{r}
+adf.test(tasi)
+adf.test(brent)
+adf.test(tasi.ret)
+adf.test(brent.ret)
+```
+
+```{r}
+cor(price)
+cor(ret)
+```
+
+```{r}
+Box.test(tasi,type="Ljung-Box",lag=6)
+Box.test(brent,type="Ljung-Box",lag=6)
+Box.test(tasi.ret,type="Ljung-Box",lag=6)
+Box.test(brent.ret,type="Ljung-Box",lag=6)
+```
+
+```{r}
+library("FinTS")
+ArchTest (tasi, lags=6, demean = FALSE) 
+ArchTest (brent, lags=6, demean = FALSE)
+ArchTest (tasi.ret, lags=6, demean = FALSE)
+ArchTest (brent.ret, lags=6, demean = FALSE)
+```
+
+```{r}
+# store the breakpoints
+bp <- breakpoints(brent ~ 1)
+summary(bp)
+```
+
+```{r}
+
+par(mfrow = c(1, 1), mar = c(2.2, 2.2, 1, 2.2), cex = 0.8)
+#plot.ts(cbind(tasi, brent, wti), plot.type = "single", ylab = "", col = 4:3)
+#legend("topleft", legend = c("TASI", "Brent", "Wti"), col = 4:3, lty = 1, bty = "n")
+
+## the BIC chooses 5 breakpoints; plot the graph with breakdates and their confidence intervals
+plot(bp)
+plot(brent,plot.type = "single", ylab = "", col = 4:3)
+lines(bp)
+
+## confidence intervals
+ci <- confint(bp)
+ci
+lines(ci)
+```

@@ -25,7 +25,7 @@ params:
         title: Email
     enable: yes
     phone:
-      - phone: 447419324241
+      - phone: (44)(0)7419324241
         title: Phone
   custom_css: []
   custom_js: []
@@ -90,13 +90,13 @@ params:
         title: Pre_programme_assignment
         url: blogs/pre_programme_assignment
       - image: pic03.jpg
-        subtitle: Lorem Etiam Nullam
-        title: Magna
-        url: blogs/magna
+        subtitle: By Xinyue Zhao
+        title: A time series data decription example
+        url: blogs/data_decription_example
       - image: pic04.jpg
-        subtitle: Nisl Sed Aliquam
-        title: Ipsum
-        url: blogs/ipsum
+        subtitle: By Xinyue Zhao
+        title: ARDL model
+        url: blogs/ardl_model
       - image: pic05.jpg
         subtitle: Ipsum Dolor Sit Amet
         title: Consequat
