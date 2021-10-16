@@ -25,7 +25,7 @@ params:
         title: Email
     enable: yes
     phone:
-      - phone: +447419324241
+      - phone: 447419324241
         title: Phone
   custom_css: []
   custom_js: []
