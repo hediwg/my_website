@@ -5,7 +5,7 @@ categories:
 date: "2021-09-30"
 description: VAR model application # the title that will show up once someone gets to this page
 draft: false
-image: pic11.jpg # save picture in \static\img\blogs. Acceptable formats= jpg, jpeg, or png . Your iPhone pics wont work
+image: pic11.jpeg # save picture in \static\img\blogs. Acceptable formats= jpg, jpeg, or png . Your iPhone pics wont work
 
 keywords: ""
 slug: var_model # slug is the shorthand URL address... no spaces plz
@@ -36,7 +36,7 @@ plot(crime_rate)</code></pre>
 ##     0.4044 
 ## 
 ## Description:
-##  Sat Oct 16 16:06:39 2021 by user: 
+##  Sat Oct 16 16:16:41 2021 by user: 
 ## 
 ## 
 ## Title:
@@ -51,7 +51,7 @@ plot(crime_rate)</code></pre>
 ##     0.5138 
 ## 
 ## Description:
-##  Sat Oct 16 16:06:39 2021 by user: 
+##  Sat Oct 16 16:16:41 2021 by user: 
 ## 
 ## 
 ## Title:
@@ -66,7 +66,7 @@ plot(crime_rate)</code></pre>
 ##     0.4645 
 ## 
 ## Description:
-##  Sat Oct 16 16:06:39 2021 by user:</code></pre>
+##  Sat Oct 16 16:16:41 2021 by user:</code></pre>
 <p>由此说明犯罪率数据存在单位根，接下来检验平稳性，考虑先取对数，再取差分看看能不能变平稳。</p>
 <pre class="r"><code>crime_rate_log_diff&lt;-diff(log(crime_rate))
 plot(crime_rate_log_diff)</code></pre>
@@ -85,7 +85,7 @@ plot(crime_rate_log_diff)</code></pre>
 ##     0.02918 
 ## 
 ## Description:
-##  Sat Oct 16 16:06:39 2021 by user:</code></pre>
+##  Sat Oct 16 16:16:41 2021 by user:</code></pre>
 <p>看来取了对数，再取差分就能通过DF检验。</p>
 <pre class="r"><code>for(i in 1:12) print(Box.test(crime_rate_log_diff,type=&quot;Ljung-Box&quot;,lag=i))</code></pre>
 <pre><code>## 
@@ -194,7 +194,7 @@ plot(Unemployment_Rate)</code></pre>
 ##     0.4079 
 ## 
 ## Description:
-##  Sat Oct 16 16:06:39 2021 by user: 
+##  Sat Oct 16 16:16:41 2021 by user: 
 ## 
 ## 
 ## Title:
@@ -209,7 +209,7 @@ plot(Unemployment_Rate)</code></pre>
 ##     0.5912 
 ## 
 ## Description:
-##  Sat Oct 16 16:06:39 2021 by user: 
+##  Sat Oct 16 16:16:41 2021 by user: 
 ## 
 ## 
 ## Title:
@@ -224,7 +224,7 @@ plot(Unemployment_Rate)</code></pre>
 ##     0.6153 
 ## 
 ## Description:
-##  Sat Oct 16 16:06:39 2021 by user:</code></pre>
+##  Sat Oct 16 16:16:41 2021 by user:</code></pre>
 <p>原始数据存在单位根！考虑取一阶差分！</p>
 <pre class="r"><code>unemployment_rate_diff = diff(Unemployment_Rate)
 plot(unemployment_rate_diff)</code></pre>
@@ -245,7 +245,7 @@ plot(unemployment_rate_diff)</code></pre>
 ##     0.01 
 ## 
 ## Description:
-##  Sat Oct 16 16:06:39 2021 by user:</code></pre>
+##  Sat Oct 16 16:16:41 2021 by user:</code></pre>
 <pre><code>## Warning in adfTest(unemployment_rate_diff, lag = i, type = &quot;nc&quot;): p-value
 ## smaller than printed p-value</code></pre>
 <pre><code>## 
@@ -261,7 +261,7 @@ plot(unemployment_rate_diff)</code></pre>
 ##     0.01 
 ## 
 ## Description:
-##  Sat Oct 16 16:06:39 2021 by user:</code></pre>
+##  Sat Oct 16 16:16:41 2021 by user:</code></pre>
 <pre><code>## Warning in adfTest(unemployment_rate_diff, lag = i, type = &quot;nc&quot;): p-value
 ## smaller than printed p-value</code></pre>
 <pre><code>## 
@@ -277,7 +277,7 @@ plot(unemployment_rate_diff)</code></pre>
 ##     0.01 
 ## 
 ## Description:
-##  Sat Oct 16 16:06:39 2021 by user:</code></pre>
+##  Sat Oct 16 16:16:41 2021 by user:</code></pre>
 <p>不再具有单位根。</p>
 <pre class="r"><code>fit_unemployment_rate_diff &lt;- auto.arima(unemployment_rate_diff)
 fit_unemployment_rate_diff</code></pre>
