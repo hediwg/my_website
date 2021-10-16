@@ -1,0 +1,554 @@
+---
+categories:  
+- ""    #the front matter should be like the one found in, e.g., blog2.md. It cannot be like the normal Rmd we used
+- ""
+date: "2021-09-30"
+description: VAR model application # the title that will show up once someone gets to this page
+draft: false
+image: pic11.jpg # save picture in \static\img\blogs. Acceptable formats= jpg, jpeg, or png . Your iPhone pics wont work
+
+keywords: ""
+slug: var_model # slug is the shorthand URL address... no spaces plz
+title: VAR model application
+---
+
+<script src="/rmarkdown-libs/header-attrs/header-attrs.js"></script>
+
+
+<p>This is an <a href="http://rmarkdown.rstudio.com">R Markdown</a> Notebook. When you execute code within the notebook, the results appear beneath the code.</p>
+<p>Try executing this chunk by clicking the <em>Run</em> button within the chunk or by placing your cursor inside it and pressing <em>Cmd+Shift+Enter</em>.</p>
+<p>首先处理犯罪率数据</p>
+<pre class="r"><code>crime_rate_data &lt;- read_excel(here::here(&quot;data&quot;,&quot;crime_rate.xlsx&quot;), sheet = 2)
+crime_rate &lt;- ts(crime_rate_data$`Reported violent crime rate in the U.S. 1990-2018`, frequency = 1, start = 1990)
+plot(crime_rate)</code></pre>
+<p><img src="/blogs/crime_unemployment_VAR_files/figure-html/unnamed-chunk-1-1.png" width="672" /></p>
+<pre class="r"><code>for(i in 1:3) print(adfTest(crime_rate,lag=i,type=&quot;ct&quot;))</code></pre>
+<pre><code>## 
+## Title:
+##  Augmented Dickey-Fuller Test
+## 
+## Test Results:
+##   PARAMETER:
+##     Lag Order: 1
+##   STATISTIC:
+##     Dickey-Fuller: -2.4389
+##   P VALUE:
+##     0.4044 
+## 
+## Description:
+##  Sat Oct 16 16:06:39 2021 by user: 
+## 
+## 
+## Title:
+##  Augmented Dickey-Fuller Test
+## 
+## Test Results:
+##   PARAMETER:
+##     Lag Order: 2
+##   STATISTIC:
+##     Dickey-Fuller: -2.1534
+##   P VALUE:
+##     0.5138 
+## 
+## Description:
+##  Sat Oct 16 16:06:39 2021 by user: 
+## 
+## 
+## Title:
+##  Augmented Dickey-Fuller Test
+## 
+## Test Results:
+##   PARAMETER:
+##     Lag Order: 3
+##   STATISTIC:
+##     Dickey-Fuller: -2.2819
+##   P VALUE:
+##     0.4645 
+## 
+## Description:
+##  Sat Oct 16 16:06:39 2021 by user:</code></pre>
+<p>由此说明犯罪率数据存在单位根，接下来检验平稳性，考虑先取对数，再取差分看看能不能变平稳。</p>
+<pre class="r"><code>crime_rate_log_diff&lt;-diff(log(crime_rate))
+plot(crime_rate_log_diff)</code></pre>
+<p><img src="/blogs/crime_unemployment_VAR_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<pre class="r"><code>print(adfTest(crime_rate_log_diff,lag=1,type=&quot;c&quot;))</code></pre>
+<pre><code>## 
+## Title:
+##  Augmented Dickey-Fuller Test
+## 
+## Test Results:
+##   PARAMETER:
+##     Lag Order: 1
+##   STATISTIC:
+##     Dickey-Fuller: -3.2666
+##   P VALUE:
+##     0.02918 
+## 
+## Description:
+##  Sat Oct 16 16:06:39 2021 by user:</code></pre>
+<p>看来取了对数，再取差分就能通过DF检验。</p>
+<pre class="r"><code>for(i in 1:12) print(Box.test(crime_rate_log_diff,type=&quot;Ljung-Box&quot;,lag=i))</code></pre>
+<pre><code>## 
+##  Box-Ljung test
+## 
+## data:  crime_rate_log_diff
+## X-squared = 7.7885, df = 1, p-value = 0.005258
+## 
+## 
+##  Box-Ljung test
+## 
+## data:  crime_rate_log_diff
+## X-squared = 7.9264, df = 2, p-value = 0.019
+## 
+## 
+##  Box-Ljung test
+## 
+## data:  crime_rate_log_diff
+## X-squared = 8.1924, df = 3, p-value = 0.0422
+## 
+## 
+##  Box-Ljung test
+## 
+## data:  crime_rate_log_diff
+## X-squared = 8.3052, df = 4, p-value = 0.08102
+## 
+## 
+##  Box-Ljung test
+## 
+## data:  crime_rate_log_diff
+## X-squared = 10.225, df = 5, p-value = 0.06911
+## 
+## 
+##  Box-Ljung test
+## 
+## data:  crime_rate_log_diff
+## X-squared = 14.067, df = 6, p-value = 0.0289
+## 
+## 
+##  Box-Ljung test
+## 
+## data:  crime_rate_log_diff
+## X-squared = 19.838, df = 7, p-value = 0.00593
+## 
+## 
+##  Box-Ljung test
+## 
+## data:  crime_rate_log_diff
+## X-squared = 22.719, df = 8, p-value = 0.003745
+## 
+## 
+##  Box-Ljung test
+## 
+## data:  crime_rate_log_diff
+## X-squared = 22.729, df = 9, p-value = 0.006835
+## 
+## 
+##  Box-Ljung test
+## 
+## data:  crime_rate_log_diff
+## X-squared = 24.554, df = 10, p-value = 0.006259
+## 
+## 
+##  Box-Ljung test
+## 
+## data:  crime_rate_log_diff
+## X-squared = 26.099, df = 11, p-value = 0.006273
+## 
+## 
+##  Box-Ljung test
+## 
+## data:  crime_rate_log_diff
+## X-squared = 26.116, df = 12, p-value = 0.01034</code></pre>
+<p>由此可见，除了lag=4，其他情况都能拒绝数据不存在序列相依性的原假设，即取对数、差分后不是一个白噪声。</p>
+<pre class="r"><code>fit_crime_rate_log_diff &lt;- auto.arima(crime_rate_log_diff)
+fit_crime_rate_log_diff</code></pre>
+<pre><code>## Series: crime_rate_log_diff 
+## ARIMA(0,0,1) with non-zero mean 
+## 
+## Coefficients:
+##          ma1     mean
+##       0.5558  -0.0235
+## s.e.  0.1317   0.0079
+## 
+## sigma^2 estimated as 0.0007999:  log likelihood=60.96
+## AIC=-115.91   AICc=-114.91   BIC=-111.92</code></pre>
+<pre class="r"><code>acf(crime_rate_log_diff)</code></pre>
+<p><img src="/blogs/crime_unemployment_VAR_files/figure-html/unnamed-chunk-7-1.png" width="672" />
+由此我们发现递减到0的速度很快，从2阶开始，ACF便不再显著。这足以确保数据的平稳性。
+由此处理完毕，接下来处理失业率。</p>
+<pre class="r"><code>Unemployment_Rate_data &lt;- read_excel(here::here(&quot;data&quot;,&quot;Unemployment_Rate.xlsx&quot;), sheet = 1)
+Unemployment_Rate &lt;- ts(Unemployment_Rate_data$`Unemployment, total (% of total labor force) (national estimate), USA`, frequency = 1, start = 1966,end=2018)
+plot(Unemployment_Rate)</code></pre>
+<p><img src="/blogs/crime_unemployment_VAR_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
+<pre class="r"><code>for(i in 1:3) print(adfTest(Unemployment_Rate,lag=i,type=&quot;nc&quot;))</code></pre>
+<pre><code>## 
+## Title:
+##  Augmented Dickey-Fuller Test
+## 
+## Test Results:
+##   PARAMETER:
+##     Lag Order: 1
+##   STATISTIC:
+##     Dickey-Fuller: -0.6404
+##   P VALUE:
+##     0.4079 
+## 
+## Description:
+##  Sat Oct 16 16:06:39 2021 by user: 
+## 
+## 
+## Title:
+##  Augmented Dickey-Fuller Test
+## 
+## Test Results:
+##   PARAMETER:
+##     Lag Order: 2
+##   STATISTIC:
+##     Dickey-Fuller: -0.0631
+##   P VALUE:
+##     0.5912 
+## 
+## Description:
+##  Sat Oct 16 16:06:39 2021 by user: 
+## 
+## 
+## Title:
+##  Augmented Dickey-Fuller Test
+## 
+## Test Results:
+##   PARAMETER:
+##     Lag Order: 3
+##   STATISTIC:
+##     Dickey-Fuller: 0.0129
+##   P VALUE:
+##     0.6153 
+## 
+## Description:
+##  Sat Oct 16 16:06:39 2021 by user:</code></pre>
+<p>原始数据存在单位根！考虑取一阶差分！</p>
+<pre class="r"><code>unemployment_rate_diff = diff(Unemployment_Rate)
+plot(unemployment_rate_diff)</code></pre>
+<p><img src="/blogs/crime_unemployment_VAR_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
+<pre class="r"><code>for(i in 1:3) print(adfTest(unemployment_rate_diff,lag=i,type=&quot;nc&quot;))</code></pre>
+<pre><code>## Warning in adfTest(unemployment_rate_diff, lag = i, type = &quot;nc&quot;): p-value
+## smaller than printed p-value</code></pre>
+<pre><code>## 
+## Title:
+##  Augmented Dickey-Fuller Test
+## 
+## Test Results:
+##   PARAMETER:
+##     Lag Order: 1
+##   STATISTIC:
+##     Dickey-Fuller: -5.6037
+##   P VALUE:
+##     0.01 
+## 
+## Description:
+##  Sat Oct 16 16:06:39 2021 by user:</code></pre>
+<pre><code>## Warning in adfTest(unemployment_rate_diff, lag = i, type = &quot;nc&quot;): p-value
+## smaller than printed p-value</code></pre>
+<pre><code>## 
+## Title:
+##  Augmented Dickey-Fuller Test
+## 
+## Test Results:
+##   PARAMETER:
+##     Lag Order: 2
+##   STATISTIC:
+##     Dickey-Fuller: -5.096
+##   P VALUE:
+##     0.01 
+## 
+## Description:
+##  Sat Oct 16 16:06:39 2021 by user:</code></pre>
+<pre><code>## Warning in adfTest(unemployment_rate_diff, lag = i, type = &quot;nc&quot;): p-value
+## smaller than printed p-value</code></pre>
+<pre><code>## 
+## Title:
+##  Augmented Dickey-Fuller Test
+## 
+## Test Results:
+##   PARAMETER:
+##     Lag Order: 3
+##   STATISTIC:
+##     Dickey-Fuller: -4.5633
+##   P VALUE:
+##     0.01 
+## 
+## Description:
+##  Sat Oct 16 16:06:39 2021 by user:</code></pre>
+<p>不再具有单位根。</p>
+<pre class="r"><code>fit_unemployment_rate_diff &lt;- auto.arima(unemployment_rate_diff)
+fit_unemployment_rate_diff</code></pre>
+<pre><code>## Series: unemployment_rate_diff 
+## ARIMA(0,0,1) with zero mean 
+## 
+## Coefficients:
+##          ma1
+##       0.3737
+## s.e.  0.1496
+## 
+## sigma^2 estimated as 0.914:  log likelihood=-71.02
+## AIC=146.03   AICc=146.28   BIC=149.93</code></pre>
+<pre class="r"><code>for(i in 1:6) print(Box.test(unemployment_rate_diff,type=&quot;Ljung-Box&quot;,lag=i))</code></pre>
+<pre><code>## 
+##  Box-Ljung test
+## 
+## data:  unemployment_rate_diff
+## X-squared = 3.2811, df = 1, p-value = 0.07008
+## 
+## 
+##  Box-Ljung test
+## 
+## data:  unemployment_rate_diff
+## X-squared = 5.5013, df = 2, p-value = 0.06389
+## 
+## 
+##  Box-Ljung test
+## 
+## data:  unemployment_rate_diff
+## X-squared = 10.26, df = 3, p-value = 0.01648
+## 
+## 
+##  Box-Ljung test
+## 
+## data:  unemployment_rate_diff
+## X-squared = 12.133, df = 4, p-value = 0.01639
+## 
+## 
+##  Box-Ljung test
+## 
+## data:  unemployment_rate_diff
+## X-squared = 12.134, df = 5, p-value = 0.03299
+## 
+## 
+##  Box-Ljung test
+## 
+## data:  unemployment_rate_diff
+## X-squared = 12.135, df = 6, p-value = 0.05903</code></pre>
+<p>所有阶都能在0.1的显著性水平下拒绝数据为白噪声的原假设。</p>
+<p>用移民数据的模型拟合残差、失业率的差分、犯罪率的对数差分差拟合VAR</p>
+<pre class="r"><code>immi_residual_data &lt;- read_excel(here::here(&quot;data&quot;,&quot;data_immi.xlsx&quot;), sheet = 1)
+immi_residual_c_1 &lt;- ts(immi_residual_data$`resi_c`, frequency = 1, start = 1967,end=2018)
+
+immi_residual_c_2 &lt;- ts(immi_residual_data$`resi_c`, frequency = 1, start = 1991,end=2018)</code></pre>
+<pre class="r"><code>et1&lt;- cbind(immi_residual_c_1,unemployment_rate_diff)</code></pre>
+<p>选择合适的阶数</p>
+<pre class="r"><code>VARselect(et1, lag.max = 10, type = c(&quot;const&quot;, &quot;trend&quot;, &quot;both&quot;, &quot;none&quot;),
+season = NULL, exogen = NULL)</code></pre>
+<pre><code>## $selection
+## AIC(n)  HQ(n)  SC(n) FPE(n) 
+##      1      1      1      1 
+## 
+## $criteria
+##                   1            2            3            4            5
+## AIC(n) 2.439122e+01 2.441572e+01 2.447426e+01 2.452967e+01 2.469171e+01
+## HQ(n)  2.448221e+01 2.456737e+01 2.468657e+01 2.480264e+01 2.502533e+01
+## SC(n)  2.463946e+01 2.482945e+01 2.505349e+01 2.527439e+01 2.560191e+01
+## FPE(n) 3.919092e+10 4.023458e+10 4.283156e+10 4.559963e+10 5.424059e+10
+##                   6            7            8            9           10
+## AIC(n) 2.472728e+01 2.462450e+01 2.471289e+01 2.470205e+01 2.475536e+01
+## HQ(n)  2.512157e+01 2.507945e+01 2.522850e+01 2.527832e+01 2.539229e+01
+## SC(n)  2.580298e+01 2.586570e+01 2.611958e+01 2.627423e+01 2.649303e+01
+## FPE(n) 5.716787e+10 5.283084e+10 5.961480e+10 6.156066e+10 6.867074e+10</code></pre>
+<p>拟合VAR模型</p>
+<pre class="r"><code>outv_unem_1=VAR(et1, p=1, type=&quot;const&quot;)
+summary(outv_unem_1)</code></pre>
+<pre><code>## 
+## VAR Estimation Results:
+## ========================= 
+## Endogenous variables: immi_residual_c_1, unemployment_rate_diff 
+## Deterministic variables: const 
+## Sample size: 51 
+## Log Likelihood: -753.04 
+## Roots of the characteristic polynomial:
+## 0.5773 0.2245
+## Call:
+## VAR(y = et1, p = 1, type = &quot;const&quot;)
+## 
+## 
+## Estimation results for equation immi_residual_c_1: 
+## ================================================== 
+## immi_residual_c_1 = immi_residual_c_1.l1 + unemployment_rate_diff.l1 + const 
+## 
+##                             Estimate Std. Error t value Pr(&gt;|t|)    
+## immi_residual_c_1.l1          0.5650     0.1196   4.725 2.05e-05 ***
+## unemployment_rate_diff.l1 -7794.4464 23116.5566  -0.337    0.737    
+## const                       510.9568 22953.3227   0.022    0.982    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## 
+## Residual standard error: 163500 on 48 degrees of freedom
+## Multiple R-Squared: 0.3249,  Adjusted R-squared: 0.2968 
+## F-statistic: 11.55 on 2 and 48 DF,  p-value: 8.023e-05 
+## 
+## 
+## Estimation results for equation unemployment_rate_diff: 
+## ======================================================= 
+## unemployment_rate_diff = immi_residual_c_1.l1 + unemployment_rate_diff.l1 + const 
+## 
+##                             Estimate Std. Error t value Pr(&gt;|t|)  
+## immi_residual_c_1.l1      -5.377e-07  7.203e-07  -0.747   0.4590  
+## unemployment_rate_diff.l1  2.369e-01  1.392e-01   1.701   0.0954 .
+## const                      9.368e-03  1.382e-01   0.068   0.9463  
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## 
+## Residual standard error: 0.985 on 48 degrees of freedom
+## Multiple R-Squared: 0.07322, Adjusted R-squared: 0.03461 
+## F-statistic: 1.896 on 2 and 48 DF,  p-value: 0.1612 
+## 
+## 
+## 
+## Covariance matrix of residuals:
+##                        immi_residual_c_1 unemployment_rate_diff
+## immi_residual_c_1              2.675e+10             -8595.8251
+## unemployment_rate_diff        -8.596e+03                 0.9702
+## 
+## Correlation matrix of residuals:
+##                        immi_residual_c_1 unemployment_rate_diff
+## immi_residual_c_1                1.00000               -0.05336
+## unemployment_rate_diff          -0.05336                1.00000</code></pre>
+<p>模型的诊断</p>
+<pre class="r"><code>serial.test(outv_unem_1)</code></pre>
+<pre><code>## 
+##  Portmanteau Test (asymptotic)
+## 
+## data:  Residuals of VAR object outv_unem_1
+## Chi-squared = 63.991, df = 60, p-value = 0.3383</code></pre>
+<p>由此可见var模型的残差不具有序列相依性
+进行预测</p>
+<pre class="r"><code>predict(outv_unem_1, n.ahead=5, ci=0.95)</code></pre>
+<pre><code>## $immi_residual_c_1
+##           fcst     lower    upper       CI
+## [1,] 55629.723 -264903.8 376163.2 320533.5
+## [2,] 33852.779 -335011.0 402716.6 368863.8
+## [3,] 20251.224 -363270.1 403772.6 383521.4
+## [4,] 12167.459 -376106.4 400441.4 388273.9
+## [5,]  7448.488 -382395.5 397292.5 389844.0
+## 
+## $unemployment_rate_diff
+##               fcst     lower    upper       CI
+## [1,] -0.2449452404 -2.175443 1.685552 1.930497
+## [2,] -0.0785612626 -2.072054 1.914932 1.993493
+## [3,] -0.0274425474 -2.029537 1.974652 2.002094
+## [4,] -0.0080210896 -2.012439 1.996397 2.004418
+## [5,]  0.0009257145 -2.004248 2.006100 2.005174</code></pre>
+<pre class="r"><code>plot(predict(outv_unem_1, n.ahead=5, ci=0.95))</code></pre>
+<p><img src="/blogs/crime_unemployment_VAR_files/figure-html/unnamed-chunk-19-1.png" width="672" /></p>
+<pre class="r"><code>et2&lt;- cbind(immi_residual_c_2,crime_rate_log_diff)</code></pre>
+<p>选择合适的阶数</p>
+<pre class="r"><code>VARselect(et2, lag.max = 8, type = c(&quot;const&quot;, &quot;trend&quot;, &quot;both&quot;, &quot;none&quot;),
+season = NULL, exogen = NULL)</code></pre>
+<pre><code>## $selection
+## AIC(n)  HQ(n)  SC(n) FPE(n) 
+##      8      8      1      3 
+## 
+## $criteria
+##                   1            2            3            4            5
+## AIC(n) 1.747651e+01 1.755673e+01 1.739730e+01 1.776960e+01 1.797140e+01
+## HQ(n)  1.753482e+01 1.765392e+01 1.753337e+01 1.794453e+01 1.818522e+01
+## SC(n)  1.777522e+01 1.805460e+01 1.809432e+01 1.866575e+01 1.906671e+01
+## FPE(n) 3.907787e+07 4.307206e+07 3.822796e+07 5.991254e+07 8.388244e+07
+##                   6            7            8
+## AIC(n) 1.803742e+01 1.816646e+01 1.697371e+01
+## HQ(n)  1.829011e+01 1.845803e+01 1.730415e+01
+## SC(n)  1.933188e+01 1.966006e+01 1.866645e+01
+## FPE(n) 1.125174e+08 1.891939e+08 1.194391e+08</code></pre>
+<pre class="r"><code>outv_crime_3=VAR(et2, p=3, type=&quot;const&quot;)
+summary(outv_crime_3)</code></pre>
+<pre><code>## 
+## VAR Estimation Results:
+## ========================= 
+## Endogenous variables: immi_residual_c_2, crime_rate_log_diff 
+## Deterministic variables: const 
+## Sample size: 25 
+## Log Likelihood: -273.238 
+## Roots of the characteristic polynomial:
+## 1.129 1.099 1.099 0.4587 0.4587 0.08147
+## Call:
+## VAR(y = et2, p = 3, type = &quot;const&quot;)
+## 
+## 
+## Estimation results for equation immi_residual_c_2: 
+## ================================================== 
+## immi_residual_c_2 = immi_residual_c_2.l1 + crime_rate_log_diff.l1 + immi_residual_c_2.l2 + crime_rate_log_diff.l2 + immi_residual_c_2.l3 + crime_rate_log_diff.l3 + const 
+## 
+##                          Estimate Std. Error t value Pr(&gt;|t|)   
+## immi_residual_c_2.l1    4.902e-01  2.120e-01   2.313  0.03279 * 
+## crime_rate_log_diff.l1  3.684e+05  1.545e+06   0.238  0.81425   
+## immi_residual_c_2.l2    6.757e-01  3.349e-01   2.017  0.05881 . 
+## crime_rate_log_diff.l2 -1.068e+06  1.697e+06  -0.629  0.53702   
+## immi_residual_c_2.l3   -1.367e+00  4.546e-01  -3.006  0.00758 **
+## crime_rate_log_diff.l3  4.874e+05  1.372e+06   0.355  0.72656   
+## const                   3.915e+03  6.698e+04   0.058  0.95404   
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## 
+## Residual standard error: 172300 on 18 degrees of freedom
+## Multiple R-Squared:  0.53,   Adjusted R-squared: 0.3733 
+## F-statistic: 3.383 on 6 and 18 DF,  p-value: 0.02061 
+## 
+## 
+## Estimation results for equation crime_rate_log_diff: 
+## ==================================================== 
+## crime_rate_log_diff = immi_residual_c_2.l1 + crime_rate_log_diff.l1 + immi_residual_c_2.l2 + crime_rate_log_diff.l2 + immi_residual_c_2.l3 + crime_rate_log_diff.l3 + const 
+## 
+##                          Estimate Std. Error t value Pr(&gt;|t|)  
+## immi_residual_c_2.l1    3.376e-08  3.474e-08   0.972   0.3441  
+## crime_rate_log_diff.l1  5.467e-01  2.532e-01   2.159   0.0446 *
+## immi_residual_c_2.l2    3.536e-08  5.489e-08   0.644   0.5276  
+## crime_rate_log_diff.l2 -3.086e-01  2.781e-01  -1.110   0.2818  
+## immi_residual_c_2.l3   -8.165e-08  7.451e-08  -1.096   0.2876  
+## crime_rate_log_diff.l3  4.623e-02  2.249e-01   0.206   0.8395  
+## const                  -2.226e-02  1.098e-02  -2.028   0.0577 .
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## 
+## Residual standard error: 0.02824 on 18 degrees of freedom
+## Multiple R-Squared: 0.4229,  Adjusted R-squared: 0.2305 
+## F-statistic: 2.198 on 6 and 18 DF,  p-value: 0.09129 
+## 
+## 
+## 
+## Covariance matrix of residuals:
+##                     immi_residual_c_2 crime_rate_log_diff
+## immi_residual_c_2           2.968e+10           1.754e+03
+## crime_rate_log_diff         1.754e+03           7.973e-04
+## 
+## Correlation matrix of residuals:
+##                     immi_residual_c_2 crime_rate_log_diff
+## immi_residual_c_2              1.0000              0.3606
+## crime_rate_log_diff            0.3606              1.0000</code></pre>
+<p>模型的诊断</p>
+<pre class="r"><code>serial.test(outv_crime_3)</code></pre>
+<pre><code>## 
+##  Portmanteau Test (asymptotic)
+## 
+## data:  Residuals of VAR object outv_crime_3
+## Chi-squared = 29.013, df = 52, p-value = 0.9959</code></pre>
+<p>由此可见var模型的残差不具有序列相依性
+进行预测</p>
+<pre class="r"><code>plot(predict(outv_crime_3, n.ahead=5, ci=0.95))</code></pre>
+<p><img src="/blogs/crime_unemployment_VAR_files/figure-html/unnamed-chunk-24-1.png" width="672" /></p>
+<pre class="r"><code>plot(immi_residual_c_2)</code></pre>
+<p><img src="/blogs/crime_unemployment_VAR_files/figure-html/unnamed-chunk-24-2.png" width="672" />
+如果不把失业率、犯罪率和移民数据看成一个整体的系统，而是分别把失业率和犯罪率看成外生变量，是否会增加系数的显著性呢？</p>
+<pre class="r"><code>outv_crime_3$varresult$immi_residual_c_2$fitted.values</code></pre>
+<pre><code>##            1            2            3            4            5            6 
+##   74559.9105   23940.0431 -127499.7725  -15780.8503   19325.9705  -17601.9528 
+##            7            8            9           10           11           12 
+##   20813.1413    9291.0240   22295.8988   82826.6453   -7673.2438   59340.2368 
+##           13           14           15           16           17           18 
+## -191288.6804  169154.9015    8056.4667  -78566.4572    -524.1293   13465.9196 
+##           19           20           21           22           23           24 
+##   60164.1263   40285.1832  -36761.5468  302674.1296  596015.5356  203310.7449 
+##           25 
+## -207502.1098</code></pre>
+<pre class="r"><code>write.table(outv_crime_3$varresult$immi_residual_c_2$fitted.values,file = &quot;fit.xls&quot;,row.names = F, col.names = F ,quote = F)</code></pre>
+<pre class="r"><code>write.table(outv_unem_1$varresult$immi_residual_c_1$fitted.values,file = &quot;fit2.xls&quot;,row.names = F, col.names = F ,quote = F)</code></pre>

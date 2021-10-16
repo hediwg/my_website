@@ -1,0 +1,167 @@
+---
+categories:  
+- ""    #the front matter should be like the one found in, e.g., blog2.md. It cannot be like the normal Rmd we used
+- ""
+date: "2021-09-30"
+description: VAR model application # the title that will show up once someone gets to this page
+draft: false
+image: pic11.jpg # save picture in \static\img\blogs. Acceptable formats= jpg, jpeg, or png . Your iPhone pics wont work
+
+keywords: ""
+slug: var_model # slug is the shorthand URL address... no spaces plz
+title: VAR model application
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+
+```{r setup,include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library("readxl")
+library("forecast")
+library("dplyr")
+library("DataCombine")
+library("tseries")
+library("urca")
+library("fUnitRoots")
+library("vars")
+library("tsDyn")
+```
+首先处理犯罪率数据
+```{r}
+crime_rate_data <- read_excel(here::here("data","crime_rate.xlsx"), sheet = 2)
+crime_rate <- ts(crime_rate_data$`Reported violent crime rate in the U.S. 1990-2018`, frequency = 1, start = 1990)
+plot(crime_rate)
+```
+```{r}
+for(i in 1:3) print(adfTest(crime_rate,lag=i,type="ct"))
+```
+由此说明犯罪率数据存在单位根，接下来检验平稳性，考虑先取对数，再取差分看看能不能变平稳。
+```{r}
+crime_rate_log_diff<-diff(log(crime_rate))
+plot(crime_rate_log_diff)
+```
+```{r}
+print(adfTest(crime_rate_log_diff,lag=1,type="c"))
+```
+看来取了对数，再取差分就能通过DF检验。
+```{r}
+for(i in 1:12) print(Box.test(crime_rate_log_diff,type="Ljung-Box",lag=i))
+```
+由此可见，除了lag=4，其他情况都能拒绝数据不存在序列相依性的原假设，即取对数、差分后不是一个白噪声。
+```{r}
+fit_crime_rate_log_diff <- auto.arima(crime_rate_log_diff)
+fit_crime_rate_log_diff
+```
+
+```{r}
+acf(crime_rate_log_diff)
+```
+由此我们发现递减到0的速度很快，从2阶开始，ACF便不再显著。这足以确保数据的平稳性。
+由此处理完毕，接下来处理失业率。
+```{r}
+Unemployment_Rate_data <- read_excel(here::here("data","Unemployment_Rate.xlsx"), sheet = 1)
+Unemployment_Rate <- ts(Unemployment_Rate_data$`Unemployment, total (% of total labor force) (national estimate), USA`, frequency = 1, start = 1966,end=2018)
+plot(Unemployment_Rate)
+```
+```{r}
+for(i in 1:3) print(adfTest(Unemployment_Rate,lag=i,type="nc"))
+```
+原始数据存在单位根！考虑取一阶差分！
+```{r}
+unemployment_rate_diff = diff(Unemployment_Rate)
+plot(unemployment_rate_diff)
+```
+```{r}
+for(i in 1:3) print(adfTest(unemployment_rate_diff,lag=i,type="nc"))
+```
+不再具有单位根。
+```{r}
+fit_unemployment_rate_diff <- auto.arima(unemployment_rate_diff)
+fit_unemployment_rate_diff
+```
+```{r}
+for(i in 1:6) print(Box.test(unemployment_rate_diff,type="Ljung-Box",lag=i))
+```
+所有阶都能在0.1的显著性水平下拒绝数据为白噪声的原假设。
+
+
+用移民数据的模型拟合残差、失业率的差分、犯罪率的对数差分差拟合VAR
+```{r}
+immi_residual_data <- read_excel(here::here("data","data_immi.xlsx"), sheet = 1)
+immi_residual_c_1 <- ts(immi_residual_data$`resi_c`, frequency = 1, start = 1967,end=2018)
+
+immi_residual_c_2 <- ts(immi_residual_data$`resi_c`, frequency = 1, start = 1991,end=2018)
+```
+
+```{r}
+et1<- cbind(immi_residual_c_1,unemployment_rate_diff)
+```
+
+选择合适的阶数
+```{r}
+VARselect(et1, lag.max = 10, type = c("const", "trend", "both", "none"),
+season = NULL, exogen = NULL)
+```
+拟合VAR模型
+```{r}
+outv_unem_1=VAR(et1, p=1, type="const")
+summary(outv_unem_1)
+```
+
+模型的诊断
+```{r}
+serial.test(outv_unem_1)
+```
+由此可见var模型的残差不具有序列相依性
+进行预测
+```{r}
+predict(outv_unem_1, n.ahead=5, ci=0.95)
+plot(predict(outv_unem_1, n.ahead=5, ci=0.95))
+
+```
+
+
+
+
+
+
+
+```{r}
+et2<- cbind(immi_residual_c_2,crime_rate_log_diff)
+```
+选择合适的阶数
+```{r}
+VARselect(et2, lag.max = 8, type = c("const", "trend", "both", "none"),
+season = NULL, exogen = NULL)
+```
+```{r}
+outv_crime_3=VAR(et2, p=3, type="const")
+summary(outv_crime_3)
+```
+模型的诊断
+```{r}
+serial.test(outv_crime_3)
+```
+由此可见var模型的残差不具有序列相依性
+进行预测
+```{r}
+plot(predict(outv_crime_3, n.ahead=5, ci=0.95))
+plot(immi_residual_c_2)
+```
+如果不把失业率、犯罪率和移民数据看成一个整体的系统，而是分别把失业率和犯罪率看成外生变量，是否会增加系数的显著性呢？
+```{r}
+outv_crime_3$varresult$immi_residual_c_2$fitted.values
+```
+```{r}
+write.table(outv_crime_3$varresult$immi_residual_c_2$fitted.values,file = "fit.xls",row.names = F, col.names = F ,quote = F)
+
+```
+```{r}
+write.table(outv_unem_1$varresult$immi_residual_c_1$fitted.values,file = "fit2.xls",row.names = F, col.names = F ,quote = F)
+```
+
+
+

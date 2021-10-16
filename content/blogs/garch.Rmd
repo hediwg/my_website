@@ -1,0 +1,506 @@
+---
+categories:  
+- ""    #the front matter should be like the one found in, e.g., blog2.md. It cannot be like the normal Rmd we used
+- ""
+date: "2021-09-30"
+description: GARCH model application # the title that will show up once someone gets to this page
+draft: false
+image: pic10.jpg # save picture in \static\img\blogs. Acceptable formats= jpg, jpeg, or png . Your iPhone pics wont work
+
+keywords: ""
+slug: garch_model # slug is the shorthand URL address... no spaces plz
+title: GARCH model application
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(PerformanceAnalytics)
+library(quantmod)
+library(rugarch)
+library(car)
+library(FinTS)
+library(rmgarch)
+library(readxl)
+library(tseries)
+library(vars)
+library(Rsolnp)
+library(mvtnorm)
+library(xtable)
+library(fUnitRoots)
+options(digits=4)
+```
+
+```{r}
+data <- read_excel(here::here("data","mydata.xlsx"), sheet = 1)
+brent <- ts(data$brent, frequency = 12, start = c(1998,11), end=c(2020,12))
+tasi <-  ts(data$tasi, frequency = 12, start = c(1998,11), end=c(2020,12))
+price <- ts.union(tasi,brent)
+
+brent.ret <- ts(diff(log(brent))[-1], frequency = 12, start = c(1998,12), end=c(2020,12))
+tasi.ret <-  ts(diff(log(tasi))[-1], frequency = 12, start = c(1998,12), end=c(2020,12))
+ret <- as.matrix(ts.union(tasi.ret,brent.ret))
+```
+
+```{r}
+par(mfrow = c(1, 1), mar = c(2.2, 2.2, 1, 2.2), cex = 0.8)
+plot.ts(cbind(tasi.ret, brent.ret), plot.type = "single", ylab = "", 
+    col = 4:3)
+legend("topleft", legend = c("TASI", "Brent"), col = 4:3, 
+    lty = 1, bty = "n")
+```
+
+```{r}
+adf.test(tasi.ret)
+adf.test(brent.ret)
+```
+
+```{r}
+VARselect(cbind(tasi.ret,brent.ret), lag.max = 10, type = c("const", "trend", "both", "none"),
+season = NULL, exogen = NULL)
+```
+
+```{r}
+varfit1 <- VAR(ret, p = 1, type = "const", season = NULL, exog = NULL) 
+summary(varfit1)
+```
+```{r}
+serial.test(varfit1, lags.pt = 5, type = "PT.asymptotic")
+```
+
+```{r}
+arch.test(varfit1, lags.multi = 15, multivariate.only = TRUE)
+```
+
+
+```{r}
+varfit2 <- VAR(ret, p = 2, type = "const", season = NULL, exog = NULL) 
+summary(varfit2)
+```
+
+```{r}
+serial.test(varfit2,lags.pt = 5, type = "PT.asymptotic")
+```
+
+```{r}
+arch.test(varfit2, lags.multi = 15, multivariate.only = TRUE)
+```
+
+```{r}
+vfit2 = varxfit(X=ret, p=2, exogen = NULL, robust = FALSE,
+gamma = 0.25, delta = 0.01, nc = 10, ns = 500, postpad = "constant")
+
+uspec = ugarchspec(mean.model = list(armaOrder = c(0,0), include.mean = 
+FALSE), variance.model = list(garchOrder = c(1,1), model = "sGARCH"),
+distribution.model = "norm")
+
+spec = dccspec(uspec = multispec( replicate(2, uspec) ), VAR = TRUE,
+lag = 2, dccOrder = c(1,1), distribution = "mvnorm")
+
+dccfit2 = dccfit(spec, data = ret, fit.control = list(eval.se=TRUE), 
+VAR.fit = vfit2)
+dccfit2
+```
+```{r}
+# univariate normal GARCH(1,1) for each series
+garch11.spec = ugarchspec(mean.model = list(armaOrder = c(0,0), include.mean = FALSE),variance.model = list(garchOrder = c(1,1), model = "sGARCH"),distribution.model = "norm")
+# dcc specification - GARCH(1,1) for conditional correlations
+dcc.garch11.spec <- dccspec(uspec = multispec( replicate(2, garch11.spec) ), 
+                            VAR = TRUE,lag = 2,
+                           dccOrder = c(1,1), 
+                           model = "DCC",
+                           distribution = "mvnorm")
+
+dccfit22 <- dccfit(dcc.garch11.spec, data = ret)
+
+dccfit22
+```
+
+```{r}
+
+plot(dccfit2, which=1)
+plot(dccfit2, which=2)
+plot(dccfit2, which=3)
+plot(dccfit2, which=4)
+plot(dccfit2, which=5)
+
+```
+
+
+```{r}
+forecasts <- dccforecast(dccfit2, n.ahead = 5)
+rcor(forecasts)
+```
+
+```{r}
+par(mfrow = c(2, 2))
+plot(forecasts,which=1)
+plot(forecasts,which=2)
+plot(forecasts,which=3)
+plot(forecasts,which=5)
+par(mfrow = c(1, 1))
+```
+
+
+```{r}
+resi2 = residuals(varfit2)
+#write.csv(resi2,file = "/Users/hedwigzhao/Desktop/resi2.csv")
+```
+
+```{r}
+DCCtest(resi2, garchOrder = c(1,1), n.lags = 1, solver = "solnp", cluster = NULL, Z = NULL)
+```
+
+```{r}
+## GARCH(1,1) ##
+
+# The following function is the filter for the GARCH(1,1) model.
+# Input:  Omega, Alpha and Beta, the parameters in the model (Double). 
+#         Y (Vector), the returns of the relevant series.
+# Output: Output (List), log likelihood (Double) and the variances (Vector).
+GARCHFilter <- function(Y, Omega, Alpha, Beta) {
+
+  iT      = length(Y)
+  Sigma2 = numeric(iT)
+  
+  # The first variance is set to the empirical variance of the first 10 % of the observations.
+  Sigma2[1] = var(Y[1:round(iT * 0.1)])
+  
+  # Compute the likelihood of the first observation.
+  LLK = dnorm(Y[1], 0, sqrt(Sigma2[1]), log = TRUE)
+  
+  # For the rest (T-1) observations we use the updating equation.
+  for (t in 2:iT) {
+    Sigma2[t] = Omega + Alpha * Y[t-1]^2 + Beta * Sigma2[t - 1]
+    
+    LLK = LLK + dnorm(Y[t], 0, sqrt(Sigma2[t]), log = TRUE)
+  }
+  
+  Output = list()
+  
+  Output[["LLK"]] = LLK
+  Output[["Sigma2"]] = Sigma2
+  
+  return(Output)
+  
+}
+# The following function evaluates the negative log likelihood for further use in the optimization proces.
+# Input:  Par (Vector), the parameters in the model, which are omega, alpha and beta.
+#         Y (Vector), the returns of the relevant series.
+# Output: -LLK (Double), the negative log likelihood.
+ObjectiveFunction <- function(Par, Y) {
+  
+  Omega = Par[1]
+  Alpha = Par[2]
+  Beta  = Par[3]
+  LLK = GARCHFilter(Y, Omega, Alpha, Beta)$LLK
+  
+  return(-LLK)
+}
+
+# The following function serves as a basis to evaluate the inner part of the inequality constraints that need to be satisfied to impose weak stationarity.
+# Input:  Par (Vector), the parameters in the inner part of the inequality constraints, which are alpha and beta.
+# Output: Alpha+Beta (Double), the inner part of the inequality constraints.
+ineqfun_GARCH_WS <- function(Par, ...) {
+  Alpha = Par[2]
+  Beta  = Par[3]
+  
+  return(Alpha + Beta)
+}
+# The following function estimates the GARCH(1,1) model by first finding maximum likelihood estimates of our parameters.
+# Input:  Y (Vector), the returns of the relevant series.
+# Output: Output (List), the optimized parameters (Vector), the BIC (Double), the variances (Vector), the log likelihood (Double)
+#         and the standardized residuals.
+
+EstimateGARCH <- function(Y, ineqfun_GARCH = ineqfun_GARCH_WS, ineqLB = 0.00, ineqUB = 0.9999) {
+  
+  # We set starting value for Alpha and Beta and set Omega to target the unconditional variance of the GARCH(1,1) model.
+  
+  Alpha = 0.125
+  Beta  = 0.85
+  Omega = var(Y) * (1.0 - Alpha - Beta)
+  
+  Par = c(Omega, Alpha, Beta)
+  
+  # Use the solnp from the Rsolnp package to optimize the negative log likelihood.
+  # By default we specity ineqLB = 0.00 and ineqUB = 0.9999 in order to match 0 < alpha + beta < 0.9999.
+  optimizer = solnp(Par,
+                    fun      = ObjectiveFunction,
+                    Y        = Y,
+                    ineqfun  = ineqfun_GARCH,
+                    ineqLB   = ineqLB,
+                    ineqUB   = ineqUB,
+                    LB       = c(0.00001, 0.0001, 0.0001),
+                    UB       = c(10.0, 0.999, 0.999)
+                    ) 
+  
+  Par = optimizer$pars
+  LLK = -tail(optimizer$values, 1)
+  
+  # Here we run the filter using the optimal parameter values, to obtain the final estimates of the variance.
+  Sigma2 = GARCHFilter(Y, Par[1], Par[2], Par[3])$Sigma2
+  
+  # Computation of Bayesian Information Criterion.
+  iT = length(Y)
+  BIC = (-2 * LLK + log(iT) * length(Par))
+  
+  # Compute standardized residuals.
+  st_res <- Y/sqrt(Sigma2)
+  
+  Output = list()
+  
+  Output[["Par"]]    = Par
+  Output[["LLK"]]    = LLK
+  Output[["BIC"]]    = BIC
+  Output[["Sigma2"]] = Sigma2
+  Output[["st_res"]] = st_res
+  
+  return(Output)
+}
+```
+
+```{r}
+resi.tasi = resi2[,1]
+resi.brent = resi2[,2]
+```
+
+
+```{r}
+# Fit GARCH(1,1) for GSPC.
+Fit_brentr = EstimateGARCH(resi.brent)
+
+# Double check alpha+beta.
+sum(Fit_brentr$Par[-1])
+
+# Fit GARCH(1,1) for DJI.
+Fit_tasir = EstimateGARCH(resi.tasi)
+
+# Double check alpha+beta.
+sum(Fit_tasir$Par[-1])
+fit <- list(Fit_brentr, Fit_tasir)
+```
+
+```{r}
+## DCC AND CCC ##
+
+# The following function is the filter for the DCC (CCC) model.
+# Input:  A and B (Double), the parameters in the model, which are a and b.
+#         Eta (Matrix), the standardized residuals from GARCH(1,1).
+#         Q (Matrix), the unconditional correlation.
+# Output: Output (List), the log likelihood (Double) and the correlation matrix R.
+DCCFilter <- function(Eta, A, B, Q) {
+  
+  iN = ncol(Eta)
+  iT = nrow(Eta)
+  
+  Cor = array(0, dim = c(iN, iN, iT))
+  aQ  = array(0, dim = c(iN, iN, iT))
+  
+  ## Initialize to the unconditional correlation.
+  Cor[ , , 1] = Q
+  aQ[ , , 1]  = Q
+  
+  # Compute the contribution to the likelihood of the first observation.
+  LLK = Eta[1, , drop = FALSE] %*% solve(Cor[,, 1]) %*% t(Eta[1, , drop = FALSE]) - 
+        Eta[1, , drop = FALSE]%*% t(Eta[1, , drop = FALSE]) + log(det(Cor[,, 1]))
+  
+  # For the rest (T-1) observations.
+  for (t in 2:iT) {
+    # Update the Q matrix.
+    aQ[,, t] = Q * (1 - A - B) + A * t(Eta[t - 1, , drop = FALSE]) %*% Eta[t - 1, , drop = FALSE] + 
+      B * aQ[,,t - 1]
+    
+    ## Compute the correlation matrix R.
+    Cor[,, t] = diag(sqrt(1/diag(aQ[,, t]))) %*% aQ[,, t] %*% diag(sqrt(1/diag(aQ[,, t]))) 
+    
+    LLK = LLK + Eta[t, , drop = FALSE] %*% solve(Cor[,, t]) %*% t(Eta[t, , drop = FALSE]) - 
+      Eta[t, , drop = FALSE] %*% t(Eta[t, , drop = FALSE]) + log(det(Cor[,, t]))
+  }
+  
+  Output = list()
+
+  Output[["LLK"]] = -0.5 * LLK
+  Output[["Cor"]] = Cor
+  
+  return(Output)
+}
+
+# The following function estimates the DCC (CCC) model by first finding maximum likelihood estimates of our parameters.
+# Input:  Y (Matrix), the returns of the relevant series.
+#         fit (List), the fit of the Garch(1,1) models combined.
+#         CCC (Boolean), shall the CCC model be computed instead of the DCC.
+# Output: Output (List), the optimized parameters (Vector), the BIC (Double), the total log likelihood (Double),
+#                        the correlation matrix (Matrix), the standard deviations (Matrix), the parameters of the Garch(1,1) (Vector)
+#                        and the standardized residuals (Vector).
+Estimate_DCC <- function(Y, fit, CCC = FALSE) {
+  
+  Eta <- cbind(unlist(fit[[1]]["st_res"]), unlist(fit[[2]]["st_res"]))
+  
+  
+  # Compute unconditional correlation.
+  Q = cor(Eta)
+  
+  
+  if(CCC == FALSE){
+  
+    # Initial parameters of a and b.
+    Par = c(0.04, 0.9)
+    
+    # Use the solnp from the Rsolnp package to optimize the negative log likelihood.
+    optimizer = solnp(Par, fun = function(Par, Eta, Q) {
+      
+      Filter = DCCFilter(Eta, Par[1], Par[2], Q)
+      NLLK = -as.numeric(Filter$LLK)
+      return(NLLK)
+      
+    }, ineqfun = function(Par, ...) {
+      sum(Par)
+    }, ineqLB = 1e-4, ineqUB = 0.999, 
+    LB = c(1e-4, 1e-4), UB = c(0.999, 0.999), 
+    Eta = Eta, Q = Q)
+    
+    Par = optimizer$pars
+    
+    # Likelihood contribution of correlation.
+    LLK_C = -tail(optimizer$values, 1)
+    
+    # Here we run the filter using the optimal parameter values, to obtain the final estimates of the correlation matrix.
+    Filter = DCCFilter(Eta, Par[1], Par[2], Q)
+  }
+  
+  else{
+    Filter = DCCFilter(Eta, 0, 0, Q)
+    
+    LLK_C = Filter[["LLK"]]
+  }
+  
+  Sigma = sqrt(cbind(unlist(fit[[1]]["Sigma2"]), unlist(fit[[2]]["Sigma2"])))
+  Coef  = cbind(unlist(fit[[1]]["Par"]), unlist(fit[[2]]["Par"]))
+  
+  # Likelihood contribution of volatility from GARCH(1,1)'s.
+  LLK_V = sum(unlist(fit[[1]]["LLK"]), unlist(fit[[2]]["LLK"]))
+  
+  # Total likelihood.
+  LLK = LLK_V + LLK_C
+  
+  Cor = Filter[["Cor"]]
+  
+  iT = nrow(Y)
+  
+  # Computation of Bayesian Information Criterion.
+  BIC = log(iT) * 8 - 2 * LLK
+  
+  Output = list()
+
+  Output[["LLK"]]  = LLK
+  Output[["Coef"]] = Coef
+  
+  if(CCC == FALSE){
+    Output[["Par"]] = Par
+  }
+  
+  Output[["Sigma"]] = Sigma
+  Output[["Cor"]]   = Cor
+  Output[["Eta"]]   = Eta
+  Output[["BIC"]]   = BIC
+  
+  return(Output)
+  
+}
+```
+
+```{r}
+# Fit DCC and CCC for our returns.
+Fit_DCC = Estimate_DCC(resi2, fit)
+Fit_CCC = Estimate_DCC(resi2, fit, CCC = TRUE)
+```
+
+
+
+```{r}
+## CoVaR ##
+
+# The following function computes the difference between the Multivariate Gaussian CDF and the squared significance level.
+# Input:  CoVar (Double), the CoVaR.
+#         VaR (Double), the VaR.
+#         sigma (Matrix), the standard deviation matrix.
+#         alpha (Double), the significance level.
+# Output: target (Double), the value to optimize over.
+bi_pnorm_t <- function(CoVaR, VaR, sigma, alpha){
+  func <- pmvnorm(upper = c(CoVaR, VaR), sigma = sigma)
+  target <- func - alpha^2
+}
+
+# The following function computes the CoVaR.
+# Input:  fit (List), the fit of either DCC or CCC.
+#         alpha (Double), the significance level.
+# Output: CoVaR (Vector), the CoVaR over time.
+covar <- function(fit, alpha){
+  iT <- length(fit$Sigma[,1])
+  
+  D <- array(0, dim = c(2,2,iT))
+  CoVaR <- c()
+  
+  for (t in 1:iT) {
+    D[,,t] = diag(fit$Sigma[t,])
+    
+    SIGMA = D[,,t] %*% fit$Cor[,,t] %*% D[,,t]
+    
+    sdY_2 <- sqrt(SIGMA[1, 2])
+    
+    VaR <- qnorm(alpha, 0, sdY_2)
+    
+    CoVaR[t] <- uniroot(bi_pnorm_t, interval = c(-10^4, 10), VaR = VaR, sigma = SIGMA, alpha=alpha)[[1]]
+  }
+  
+  return(CoVaR)
+}
+```
+
+```{r}
+# Compute the CoVaR at 0.01 and 0.05 significance level for both models.
+DCC_CoVaR_1 <- covar(Fit_DCC, 0.01)
+DCC_CoVaR_5 <- covar(Fit_DCC, 0.05)
+
+CCC_CoVaR_1 <- covar(Fit_CCC, 0.01)
+CCC_CoVaR_5 <- covar(Fit_CCC, 0.05)
+```
+
+```{r}
+par(mfrow = c(2, 1))
+# Plot of CoVaR for DCC
+plot(y = DCC_CoVaR_1,
+     x    = index(resi2),
+     type = 'l',
+     xaxs = "i",
+     yaxs = "i",
+     xlab = 'Date',
+     ylab = 'CoVaR',
+     main = 'CoVaR of DCC Model')
+lines(y = DCC_CoVaR_5,
+      x    = index(resi2),
+      type = 'l',
+      xaxs = "i",
+      yaxs = "i",
+      col = 'red',
+      lty = 'dashed')
+
+# Plot of CoVaR for CCC
+plot(y= CCC_CoVaR_1,
+     x    = index(resi2),
+     type = 'l',
+     xaxs = "i",
+     yaxs = "i",
+     xlab = 'Date',
+     ylab = 'CoVaR',
+     main = 'CoVaR of CCC Model')
+lines(y = CCC_CoVaR_5,
+      x    = index(resi2),
+      type = 'l',
+      xaxs = "i",
+      yaxs = "i",
+      col = 'red',
+      lty = 'dashed')
+par(mfrow = c(1, 1))
+```
+

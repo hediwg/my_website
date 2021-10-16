@@ -1,0 +1,708 @@
+---
+categories:  
+- ""    #the front matter should be like the one found in, e.g., blog2.md. It cannot be like the normal Rmd we used
+- ""
+date: "2021-09-30"
+description: GARCH model application # the title that will show up once someone gets to this page
+draft: false
+image: pic10.jpg # save picture in \static\img\blogs. Acceptable formats= jpg, jpeg, or png . Your iPhone pics wont work
+
+keywords: ""
+slug: garch_model # slug is the shorthand URL address... no spaces plz
+title: GARCH model application
+---
+
+<script src="/rmarkdown-libs/header-attrs/header-attrs.js"></script>
+
+
+<pre class="r"><code>data &lt;- read_excel(here::here(&quot;data&quot;,&quot;mydata.xlsx&quot;), sheet = 1)
+brent &lt;- ts(data$brent, frequency = 12, start = c(1998,11), end=c(2020,12))
+tasi &lt;-  ts(data$tasi, frequency = 12, start = c(1998,11), end=c(2020,12))
+price &lt;- ts.union(tasi,brent)
+
+brent.ret &lt;- ts(diff(log(brent))[-1], frequency = 12, start = c(1998,12), end=c(2020,12))
+tasi.ret &lt;-  ts(diff(log(tasi))[-1], frequency = 12, start = c(1998,12), end=c(2020,12))
+ret &lt;- as.matrix(ts.union(tasi.ret,brent.ret))</code></pre>
+<pre class="r"><code>par(mfrow = c(1, 1), mar = c(2.2, 2.2, 1, 2.2), cex = 0.8)
+plot.ts(cbind(tasi.ret, brent.ret), plot.type = &quot;single&quot;, ylab = &quot;&quot;, 
+    col = 4:3)
+legend(&quot;topleft&quot;, legend = c(&quot;TASI&quot;, &quot;Brent&quot;), col = 4:3, 
+    lty = 1, bty = &quot;n&quot;)</code></pre>
+<p><img src="/blogs/garch_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<pre class="r"><code>adf.test(tasi.ret)</code></pre>
+<pre><code>## Warning in adf.test(tasi.ret): p-value smaller than printed p-value</code></pre>
+<pre><code>## 
+##  Augmented Dickey-Fuller Test
+## 
+## data:  tasi.ret
+## Dickey-Fuller = -5.3, Lag order = 6, p-value = 0.01
+## alternative hypothesis: stationary</code></pre>
+<pre class="r"><code>adf.test(brent.ret)</code></pre>
+<pre><code>## Warning in adf.test(brent.ret): p-value smaller than printed p-value</code></pre>
+<pre><code>## 
+##  Augmented Dickey-Fuller Test
+## 
+## data:  brent.ret
+## Dickey-Fuller = -6.5, Lag order = 6, p-value = 0.01
+## alternative hypothesis: stationary</code></pre>
+<pre class="r"><code>VARselect(cbind(tasi.ret,brent.ret), lag.max = 10, type = c(&quot;const&quot;, &quot;trend&quot;, &quot;both&quot;, &quot;none&quot;),
+season = NULL, exogen = NULL)</code></pre>
+<pre><code>## $selection
+## AIC(n)  HQ(n)  SC(n) FPE(n) 
+##      2      1      1      2 
+## 
+## $criteria
+##                 1          2          3          4          5          6
+## AIC(n) -9.9216760 -9.938e+00 -9.915e+00 -9.922e+00 -9.917e+00 -9.8956368
+## HQ(n)  -9.8881596 -9.882e+00 -9.837e+00 -9.821e+00 -9.794e+00 -9.7503992
+## SC(n)  -9.8383521 -9.799e+00 -9.721e+00 -9.672e+00 -9.611e+00 -9.5345668
+## FPE(n)  0.0000491  4.833e-05  4.941e-05  4.911e-05  4.935e-05  0.0000504
+##                 7          8          9         10
+## AIC(n) -9.869e+00 -9.858e+00 -9.835e+00 -9.818e+00
+## HQ(n)  -9.701e+00 -9.668e+00 -9.622e+00 -9.584e+00
+## SC(n)  -9.452e+00 -9.386e+00 -9.307e+00 -9.235e+00
+## FPE(n)  5.177e-05  5.234e-05  5.359e-05  5.448e-05</code></pre>
+<pre class="r"><code>varfit1 &lt;- VAR(ret, p = 1, type = &quot;const&quot;, season = NULL, exog = NULL) 
+summary(varfit1)</code></pre>
+<pre><code>## 
+## VAR Estimation Results:
+## ========================= 
+## Endogenous variables: tasi.ret, brent.ret 
+## Deterministic variables: const 
+## Sample size: 264 
+## Log Likelihood: 567.943 
+## Roots of the characteristic polynomial:
+## 0.302 0.0116
+## Call:
+## VAR(y = ret, p = 1, type = &quot;const&quot;, exogen = NULL)
+## 
+## 
+## Estimation results for equation tasi.ret: 
+## ========================================= 
+## tasi.ret = tasi.ret.l1 + brent.ret.l1 + const 
+## 
+##              Estimate Std. Error t value Pr(&gt;|t|)  
+## tasi.ret.l1   0.13929    0.06308    2.21    0.028 *
+## brent.ret.l1  0.04987    0.04054    1.23    0.220  
+## const         0.00561    0.00427    1.31    0.190  
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## 
+## Residual standard error: 0.0691 on 261 degrees of freedom
+## Multiple R-Squared: 0.031,   Adjusted R-squared: 0.0236 
+## F-statistic: 4.18 on 2 and 261 DF,  p-value: 0.0164 
+## 
+## 
+## Estimation results for equation brent.ret: 
+## ========================================== 
+## brent.ret = tasi.ret.l1 + brent.ret.l1 + const 
+## 
+##              Estimate Std. Error t value Pr(&gt;|t|)    
+## tasi.ret.l1   0.41627    0.09321    4.47  1.2e-05 ***
+## brent.ret.l1  0.17420    0.05991    2.91    0.004 ** 
+## const         0.00223    0.00632    0.35    0.725    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## 
+## Residual standard error: 0.102 on 261 degrees of freedom
+## Multiple R-Squared: 0.126,   Adjusted R-squared: 0.119 
+## F-statistic: 18.8 on 2 and 261 DF,  p-value: 2.31e-08 
+## 
+## 
+## 
+## Covariance matrix of residuals:
+##           tasi.ret brent.ret
+## tasi.ret   0.00477   0.00151
+## brent.ret  0.00151   0.01042
+## 
+## Correlation matrix of residuals:
+##           tasi.ret brent.ret
+## tasi.ret     1.000     0.213
+## brent.ret    0.213     1.000</code></pre>
+<pre class="r"><code>serial.test(varfit1, lags.pt = 5, type = &quot;PT.asymptotic&quot;)</code></pre>
+<pre><code>## 
+##  Portmanteau Test (asymptotic)
+## 
+## data:  Residuals of VAR object varfit1
+## Chi-squared = 28, df = 16, p-value = 0.03</code></pre>
+<pre class="r"><code>arch.test(varfit1, lags.multi = 15, multivariate.only = TRUE)</code></pre>
+<pre><code>## 
+##  ARCH (multivariate)
+## 
+## data:  Residuals of VAR object varfit1
+## Chi-squared = 263, df = 135, p-value = 3e-10</code></pre>
+<pre class="r"><code>varfit2 &lt;- VAR(ret, p = 2, type = &quot;const&quot;, season = NULL, exog = NULL) 
+summary(varfit2)</code></pre>
+<pre><code>## 
+## VAR Estimation Results:
+## ========================= 
+## Endogenous variables: tasi.ret, brent.ret 
+## Deterministic variables: const 
+## Sample size: 263 
+## Log Likelihood: 571.101 
+## Roots of the characteristic polynomial:
+## 0.417 0.417 0.35 0.0763
+## Call:
+## VAR(y = ret, p = 2, type = &quot;const&quot;, exogen = NULL)
+## 
+## 
+## Estimation results for equation tasi.ret: 
+## ========================================= 
+## tasi.ret = tasi.ret.l1 + brent.ret.l1 + tasi.ret.l2 + brent.ret.l2 + const 
+## 
+##              Estimate Std. Error t value Pr(&gt;|t|)  
+## tasi.ret.l1   0.13275    0.06336    2.10    0.037 *
+## brent.ret.l1  0.04055    0.04295    0.94    0.346  
+## tasi.ret.l2   0.00296    0.06570    0.05    0.964  
+## brent.ret.l2  0.05387    0.04135    1.30    0.194  
+## const         0.00570    0.00430    1.33    0.186  
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## 
+## Residual standard error: 0.0691 on 258 degrees of freedom
+## Multiple R-Squared: 0.0385,  Adjusted R-squared: 0.0236 
+## F-statistic: 2.58 on 4 and 258 DF,  p-value: 0.0377 
+## 
+## 
+## Estimation results for equation brent.ret: 
+## ========================================== 
+## brent.ret = tasi.ret.l1 + brent.ret.l1 + tasi.ret.l2 + brent.ret.l2 + const 
+## 
+##              Estimate Std. Error t value Pr(&gt;|t|)    
+## tasi.ret.l1   0.42135    0.09279    4.54  8.6e-06 ***
+## brent.ret.l1  0.19900    0.06290    3.16   0.0017 ** 
+## tasi.ret.l2   0.07769    0.09622    0.81   0.4201    
+## brent.ret.l2 -0.15681    0.06056   -2.59   0.0102 *  
+## const         0.00278    0.00629    0.44   0.6588    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## 
+## Residual standard error: 0.101 on 258 degrees of freedom
+## Multiple R-Squared: 0.15,    Adjusted R-squared: 0.137 
+## F-statistic: 11.4 on 4 and 258 DF,  p-value: 1.63e-08 
+## 
+## 
+## 
+## Covariance matrix of residuals:
+##           tasi.ret brent.ret
+## tasi.ret   0.00477   0.00158
+## brent.ret  0.00158   0.01023
+## 
+## Correlation matrix of residuals:
+##           tasi.ret brent.ret
+## tasi.ret     1.000     0.226
+## brent.ret    0.226     1.000</code></pre>
+<pre class="r"><code>serial.test(varfit2,lags.pt = 5, type = &quot;PT.asymptotic&quot;)</code></pre>
+<pre><code>## 
+##  Portmanteau Test (asymptotic)
+## 
+## data:  Residuals of VAR object varfit2
+## Chi-squared = 18, df = 12, p-value = 0.1</code></pre>
+<pre class="r"><code>arch.test(varfit2, lags.multi = 15, multivariate.only = TRUE)</code></pre>
+<pre><code>## 
+##  ARCH (multivariate)
+## 
+## data:  Residuals of VAR object varfit2
+## Chi-squared = 254, df = 135, p-value = 3e-09</code></pre>
+<pre class="r"><code>vfit2 = varxfit(X=ret, p=2, exogen = NULL, robust = FALSE,
+gamma = 0.25, delta = 0.01, nc = 10, ns = 500, postpad = &quot;constant&quot;)
+
+uspec = ugarchspec(mean.model = list(armaOrder = c(0,0), include.mean = 
+FALSE), variance.model = list(garchOrder = c(1,1), model = &quot;sGARCH&quot;),
+distribution.model = &quot;norm&quot;)
+
+spec = dccspec(uspec = multispec( replicate(2, uspec) ), VAR = TRUE,
+lag = 2, dccOrder = c(1,1), distribution = &quot;mvnorm&quot;)
+
+dccfit2 = dccfit(spec, data = ret, fit.control = list(eval.se=TRUE), 
+VAR.fit = vfit2)
+dccfit2</code></pre>
+<pre><code>## 
+## *---------------------------------*
+## *          DCC GARCH Fit          *
+## *---------------------------------*
+## 
+## Distribution         :  mvnorm
+## Model                :  DCC(1,1)
+## No. Parameters       :  19
+## [VAR GARCH DCC UncQ] : [10+6+2+1]
+## No. Series           :  2
+## No. Obs.             :  265
+## Log-Likelihood       :  625.5
+## Av.Log-Likelihood    :  2.36 
+## 
+## Optimal Parameters
+## -----------------------------------
+##                     Estimate  Std. Error   t value Pr(&gt;|t|)
+## [tasi.ret].omega    0.000260    0.000164  1.586597 0.112604
+## [tasi.ret].alpha1   0.166307    0.067998  2.445744 0.014455
+## [tasi.ret].beta1    0.781218    0.076314 10.236872 0.000000
+## [brent.ret].omega   0.005433    0.001910  2.844037 0.004455
+## [brent.ret].alpha1  0.474017    0.211702  2.239080 0.025151
+## [brent.ret].beta1   0.000000    0.228306  0.000002 0.999998
+## [Joint]dcca1        0.000000    0.000031  0.000570 0.999545
+## [Joint]dccb1        0.920936    0.520654  1.768806 0.076926
+## 
+## Information Criteria
+## ---------------------
+##                     
+## Akaike       -4.5773
+## Bayes        -4.3206
+## Shibata      -4.5867
+## Hannan-Quinn -4.4741
+## 
+## 
+## Elapsed time : 0.7138</code></pre>
+<pre class="r"><code># univariate normal GARCH(1,1) for each series
+garch11.spec = ugarchspec(mean.model = list(armaOrder = c(0,0), include.mean = FALSE),variance.model = list(garchOrder = c(1,1), model = &quot;sGARCH&quot;),distribution.model = &quot;norm&quot;)
+# dcc specification - GARCH(1,1) for conditional correlations
+dcc.garch11.spec &lt;- dccspec(uspec = multispec( replicate(2, garch11.spec) ), 
+                            VAR = TRUE,lag = 2,
+                           dccOrder = c(1,1), 
+                           model = &quot;DCC&quot;,
+                           distribution = &quot;mvnorm&quot;)
+
+dccfit22 &lt;- dccfit(dcc.garch11.spec, data = ret)
+
+dccfit22</code></pre>
+<pre><code>## 
+## *---------------------------------*
+## *          DCC GARCH Fit          *
+## *---------------------------------*
+## 
+## Distribution         :  mvnorm
+## Model                :  DCC(1,1)
+## No. Parameters       :  19
+## [VAR GARCH DCC UncQ] : [10+6+2+1]
+## No. Series           :  2
+## No. Obs.             :  265
+## Log-Likelihood       :  625.5
+## Av.Log-Likelihood    :  2.36 
+## 
+## Optimal Parameters
+## -----------------------------------
+##                     Estimate  Std. Error   t value Pr(&gt;|t|)
+## [tasi.ret].omega    0.000260    0.000164  1.586710 0.112578
+## [tasi.ret].alpha1   0.166302    0.067992  2.445881 0.014450
+## [tasi.ret].beta1    0.781231    0.076302 10.238693 0.000000
+## [brent.ret].omega   0.005433    0.001910  2.844437 0.004449
+## [brent.ret].alpha1  0.474018    0.211692  2.239186 0.025144
+## [brent.ret].beta1   0.000000    0.228270  0.000000 1.000000
+## [Joint]dcca1        0.000000    0.000012  0.001485 0.998815
+## [Joint]dccb1        0.920930    0.519474  1.772812 0.076260
+## 
+## Information Criteria
+## ---------------------
+##                     
+## Akaike       -4.5773
+## Bayes        -4.3206
+## Shibata      -4.5867
+## Hannan-Quinn -4.4741
+## 
+## 
+## Elapsed time : 0.4806</code></pre>
+<pre class="r"><code>plot(dccfit2, which=1)</code></pre>
+<p><img src="/blogs/garch_files/figure-html/unnamed-chunk-13-1.png" width="672" /></p>
+<pre class="r"><code>plot(dccfit2, which=2)</code></pre>
+<p><img src="/blogs/garch_files/figure-html/unnamed-chunk-13-2.png" width="672" /></p>
+<pre class="r"><code>plot(dccfit2, which=3)</code></pre>
+<p><img src="/blogs/garch_files/figure-html/unnamed-chunk-13-3.png" width="672" /></p>
+<pre class="r"><code>plot(dccfit2, which=4)</code></pre>
+<p><img src="/blogs/garch_files/figure-html/unnamed-chunk-13-4.png" width="672" /></p>
+<pre class="r"><code>plot(dccfit2, which=5)</code></pre>
+<p><img src="/blogs/garch_files/figure-html/unnamed-chunk-13-5.png" width="672" /></p>
+<pre class="r"><code>forecasts &lt;- dccforecast(dccfit2, n.ahead = 5)
+rcor(forecasts)</code></pre>
+<pre><code>## $`Dec 2020`
+## , , T+1
+## 
+##           tasi.ret brent.ret
+## tasi.ret    1.0000    0.2789
+## brent.ret   0.2789    1.0000
+## 
+## , , T+2
+## 
+##           tasi.ret brent.ret
+## tasi.ret    1.0000    0.2789
+## brent.ret   0.2789    1.0000
+## 
+## , , T+3
+## 
+##           tasi.ret brent.ret
+## tasi.ret    1.0000    0.2789
+## brent.ret   0.2789    1.0000
+## 
+## , , T+4
+## 
+##           tasi.ret brent.ret
+## tasi.ret    1.0000    0.2789
+## brent.ret   0.2789    1.0000
+## 
+## , , T+5
+## 
+##           tasi.ret brent.ret
+## tasi.ret    1.0000    0.2789
+## brent.ret   0.2789    1.0000</code></pre>
+<pre class="r"><code>par(mfrow = c(2, 2))
+plot(forecasts,which=1)</code></pre>
+<p><img src="/blogs/garch_files/figure-html/unnamed-chunk-15-1.png" width="672" /></p>
+<pre class="r"><code>plot(forecasts,which=2)</code></pre>
+<p><img src="/blogs/garch_files/figure-html/unnamed-chunk-15-2.png" width="672" /></p>
+<pre class="r"><code>plot(forecasts,which=3)</code></pre>
+<p><img src="/blogs/garch_files/figure-html/unnamed-chunk-15-3.png" width="672" /></p>
+<pre class="r"><code>plot(forecasts,which=5)</code></pre>
+<p><img src="/blogs/garch_files/figure-html/unnamed-chunk-15-4.png" width="672" /></p>
+<pre class="r"><code>par(mfrow = c(1, 1))</code></pre>
+<pre class="r"><code>resi2 = residuals(varfit2)
+#write.csv(resi2,file = &quot;/Users/hedwigzhao/Desktop/resi2.csv&quot;)</code></pre>
+<pre class="r"><code>DCCtest(resi2, garchOrder = c(1,1), n.lags = 1, solver = &quot;solnp&quot;, cluster = NULL, Z = NULL)</code></pre>
+<pre><code>## $H0
+## [1] &quot;Constant Probability&quot;
+## 
+## $p.value
+## [1] 0.9813
+## 
+## $statistic
+## [1] 0.03774</code></pre>
+<pre class="r"><code>## GARCH(1,1) ##
+
+# The following function is the filter for the GARCH(1,1) model.
+# Input:  Omega, Alpha and Beta, the parameters in the model (Double). 
+#         Y (Vector), the returns of the relevant series.
+# Output: Output (List), log likelihood (Double) and the variances (Vector).
+GARCHFilter &lt;- function(Y, Omega, Alpha, Beta) {
+
+  iT      = length(Y)
+  Sigma2 = numeric(iT)
+  
+  # The first variance is set to the empirical variance of the first 10 % of the observations.
+  Sigma2[1] = var(Y[1:round(iT * 0.1)])
+  
+  # Compute the likelihood of the first observation.
+  LLK = dnorm(Y[1], 0, sqrt(Sigma2[1]), log = TRUE)
+  
+  # For the rest (T-1) observations we use the updating equation.
+  for (t in 2:iT) {
+    Sigma2[t] = Omega + Alpha * Y[t-1]^2 + Beta * Sigma2[t - 1]
+    
+    LLK = LLK + dnorm(Y[t], 0, sqrt(Sigma2[t]), log = TRUE)
+  }
+  
+  Output = list()
+  
+  Output[[&quot;LLK&quot;]] = LLK
+  Output[[&quot;Sigma2&quot;]] = Sigma2
+  
+  return(Output)
+  
+}
+# The following function evaluates the negative log likelihood for further use in the optimization proces.
+# Input:  Par (Vector), the parameters in the model, which are omega, alpha and beta.
+#         Y (Vector), the returns of the relevant series.
+# Output: -LLK (Double), the negative log likelihood.
+ObjectiveFunction &lt;- function(Par, Y) {
+  
+  Omega = Par[1]
+  Alpha = Par[2]
+  Beta  = Par[3]
+  LLK = GARCHFilter(Y, Omega, Alpha, Beta)$LLK
+  
+  return(-LLK)
+}
+
+# The following function serves as a basis to evaluate the inner part of the inequality constraints that need to be satisfied to impose weak stationarity.
+# Input:  Par (Vector), the parameters in the inner part of the inequality constraints, which are alpha and beta.
+# Output: Alpha+Beta (Double), the inner part of the inequality constraints.
+ineqfun_GARCH_WS &lt;- function(Par, ...) {
+  Alpha = Par[2]
+  Beta  = Par[3]
+  
+  return(Alpha + Beta)
+}
+# The following function estimates the GARCH(1,1) model by first finding maximum likelihood estimates of our parameters.
+# Input:  Y (Vector), the returns of the relevant series.
+# Output: Output (List), the optimized parameters (Vector), the BIC (Double), the variances (Vector), the log likelihood (Double)
+#         and the standardized residuals.
+
+EstimateGARCH &lt;- function(Y, ineqfun_GARCH = ineqfun_GARCH_WS, ineqLB = 0.00, ineqUB = 0.9999) {
+  
+  # We set starting value for Alpha and Beta and set Omega to target the unconditional variance of the GARCH(1,1) model.
+  
+  Alpha = 0.125
+  Beta  = 0.85
+  Omega = var(Y) * (1.0 - Alpha - Beta)
+  
+  Par = c(Omega, Alpha, Beta)
+  
+  # Use the solnp from the Rsolnp package to optimize the negative log likelihood.
+  # By default we specity ineqLB = 0.00 and ineqUB = 0.9999 in order to match 0 &lt; alpha + beta &lt; 0.9999.
+  optimizer = solnp(Par,
+                    fun      = ObjectiveFunction,
+                    Y        = Y,
+                    ineqfun  = ineqfun_GARCH,
+                    ineqLB   = ineqLB,
+                    ineqUB   = ineqUB,
+                    LB       = c(0.00001, 0.0001, 0.0001),
+                    UB       = c(10.0, 0.999, 0.999)
+                    ) 
+  
+  Par = optimizer$pars
+  LLK = -tail(optimizer$values, 1)
+  
+  # Here we run the filter using the optimal parameter values, to obtain the final estimates of the variance.
+  Sigma2 = GARCHFilter(Y, Par[1], Par[2], Par[3])$Sigma2
+  
+  # Computation of Bayesian Information Criterion.
+  iT = length(Y)
+  BIC = (-2 * LLK + log(iT) * length(Par))
+  
+  # Compute standardized residuals.
+  st_res &lt;- Y/sqrt(Sigma2)
+  
+  Output = list()
+  
+  Output[[&quot;Par&quot;]]    = Par
+  Output[[&quot;LLK&quot;]]    = LLK
+  Output[[&quot;BIC&quot;]]    = BIC
+  Output[[&quot;Sigma2&quot;]] = Sigma2
+  Output[[&quot;st_res&quot;]] = st_res
+  
+  return(Output)
+}</code></pre>
+<pre class="r"><code>resi.tasi = resi2[,1]
+resi.brent = resi2[,2]</code></pre>
+<pre class="r"><code># Fit GARCH(1,1) for GSPC.
+Fit_brentr = EstimateGARCH(resi.brent)</code></pre>
+<pre><code>## 
+## Iter: 1 fn: -255.9748     Pars:  0.0053442 0.4535298 0.0001008
+## Iter: 2 fn: -255.9748     Pars:  0.0053442 0.4535300 0.0001001
+## solnp--&gt; Completed in 2 iterations</code></pre>
+<pre class="r"><code># Double check alpha+beta.
+sum(Fit_brentr$Par[-1])</code></pre>
+<pre><code>## [1] 0.4536</code></pre>
+<pre class="r"><code># Fit GARCH(1,1) for DJI.
+Fit_tasir = EstimateGARCH(resi.tasi)</code></pre>
+<pre><code>## 
+## Iter: 1 fn: -354.6458     Pars:  0.0002498 0.1581000 0.7914548
+## Iter: 2 fn: -354.6458     Pars:  0.0002497 0.1580817 0.7914823
+## solnp--&gt; Completed in 2 iterations</code></pre>
+<pre class="r"><code># Double check alpha+beta.
+sum(Fit_tasir$Par[-1])</code></pre>
+<pre><code>## [1] 0.9496</code></pre>
+<pre class="r"><code>fit &lt;- list(Fit_brentr, Fit_tasir)</code></pre>
+<pre class="r"><code>## DCC AND CCC ##
+
+# The following function is the filter for the DCC (CCC) model.
+# Input:  A and B (Double), the parameters in the model, which are a and b.
+#         Eta (Matrix), the standardized residuals from GARCH(1,1).
+#         Q (Matrix), the unconditional correlation.
+# Output: Output (List), the log likelihood (Double) and the correlation matrix R.
+DCCFilter &lt;- function(Eta, A, B, Q) {
+  
+  iN = ncol(Eta)
+  iT = nrow(Eta)
+  
+  Cor = array(0, dim = c(iN, iN, iT))
+  aQ  = array(0, dim = c(iN, iN, iT))
+  
+  ## Initialize to the unconditional correlation.
+  Cor[ , , 1] = Q
+  aQ[ , , 1]  = Q
+  
+  # Compute the contribution to the likelihood of the first observation.
+  LLK = Eta[1, , drop = FALSE] %*% solve(Cor[,, 1]) %*% t(Eta[1, , drop = FALSE]) - 
+        Eta[1, , drop = FALSE]%*% t(Eta[1, , drop = FALSE]) + log(det(Cor[,, 1]))
+  
+  # For the rest (T-1) observations.
+  for (t in 2:iT) {
+    # Update the Q matrix.
+    aQ[,, t] = Q * (1 - A - B) + A * t(Eta[t - 1, , drop = FALSE]) %*% Eta[t - 1, , drop = FALSE] + 
+      B * aQ[,,t - 1]
+    
+    ## Compute the correlation matrix R.
+    Cor[,, t] = diag(sqrt(1/diag(aQ[,, t]))) %*% aQ[,, t] %*% diag(sqrt(1/diag(aQ[,, t]))) 
+    
+    LLK = LLK + Eta[t, , drop = FALSE] %*% solve(Cor[,, t]) %*% t(Eta[t, , drop = FALSE]) - 
+      Eta[t, , drop = FALSE] %*% t(Eta[t, , drop = FALSE]) + log(det(Cor[,, t]))
+  }
+  
+  Output = list()
+
+  Output[[&quot;LLK&quot;]] = -0.5 * LLK
+  Output[[&quot;Cor&quot;]] = Cor
+  
+  return(Output)
+}
+
+# The following function estimates the DCC (CCC) model by first finding maximum likelihood estimates of our parameters.
+# Input:  Y (Matrix), the returns of the relevant series.
+#         fit (List), the fit of the Garch(1,1) models combined.
+#         CCC (Boolean), shall the CCC model be computed instead of the DCC.
+# Output: Output (List), the optimized parameters (Vector), the BIC (Double), the total log likelihood (Double),
+#                        the correlation matrix (Matrix), the standard deviations (Matrix), the parameters of the Garch(1,1) (Vector)
+#                        and the standardized residuals (Vector).
+Estimate_DCC &lt;- function(Y, fit, CCC = FALSE) {
+  
+  Eta &lt;- cbind(unlist(fit[[1]][&quot;st_res&quot;]), unlist(fit[[2]][&quot;st_res&quot;]))
+  
+  
+  # Compute unconditional correlation.
+  Q = cor(Eta)
+  
+  
+  if(CCC == FALSE){
+  
+    # Initial parameters of a and b.
+    Par = c(0.04, 0.9)
+    
+    # Use the solnp from the Rsolnp package to optimize the negative log likelihood.
+    optimizer = solnp(Par, fun = function(Par, Eta, Q) {
+      
+      Filter = DCCFilter(Eta, Par[1], Par[2], Q)
+      NLLK = -as.numeric(Filter$LLK)
+      return(NLLK)
+      
+    }, ineqfun = function(Par, ...) {
+      sum(Par)
+    }, ineqLB = 1e-4, ineqUB = 0.999, 
+    LB = c(1e-4, 1e-4), UB = c(0.999, 0.999), 
+    Eta = Eta, Q = Q)
+    
+    Par = optimizer$pars
+    
+    # Likelihood contribution of correlation.
+    LLK_C = -tail(optimizer$values, 1)
+    
+    # Here we run the filter using the optimal parameter values, to obtain the final estimates of the correlation matrix.
+    Filter = DCCFilter(Eta, Par[1], Par[2], Q)
+  }
+  
+  else{
+    Filter = DCCFilter(Eta, 0, 0, Q)
+    
+    LLK_C = Filter[[&quot;LLK&quot;]]
+  }
+  
+  Sigma = sqrt(cbind(unlist(fit[[1]][&quot;Sigma2&quot;]), unlist(fit[[2]][&quot;Sigma2&quot;])))
+  Coef  = cbind(unlist(fit[[1]][&quot;Par&quot;]), unlist(fit[[2]][&quot;Par&quot;]))
+  
+  # Likelihood contribution of volatility from GARCH(1,1)&#39;s.
+  LLK_V = sum(unlist(fit[[1]][&quot;LLK&quot;]), unlist(fit[[2]][&quot;LLK&quot;]))
+  
+  # Total likelihood.
+  LLK = LLK_V + LLK_C
+  
+  Cor = Filter[[&quot;Cor&quot;]]
+  
+  iT = nrow(Y)
+  
+  # Computation of Bayesian Information Criterion.
+  BIC = log(iT) * 8 - 2 * LLK
+  
+  Output = list()
+
+  Output[[&quot;LLK&quot;]]  = LLK
+  Output[[&quot;Coef&quot;]] = Coef
+  
+  if(CCC == FALSE){
+    Output[[&quot;Par&quot;]] = Par
+  }
+  
+  Output[[&quot;Sigma&quot;]] = Sigma
+  Output[[&quot;Cor&quot;]]   = Cor
+  Output[[&quot;Eta&quot;]]   = Eta
+  Output[[&quot;BIC&quot;]]   = BIC
+  
+  return(Output)
+  
+}</code></pre>
+<pre class="r"><code># Fit DCC and CCC for our returns.
+Fit_DCC = Estimate_DCC(resi2, fit)</code></pre>
+<pre><code>## 
+## Iter: 1 fn: -10.8656  Pars:  0.0006232 0.7148808
+## Iter: 2 fn: -10.8656  Pars:  0.0006239 0.7148930
+## solnp--&gt; Completed in 2 iterations</code></pre>
+<pre class="r"><code>Fit_CCC = Estimate_DCC(resi2, fit, CCC = TRUE)</code></pre>
+<pre class="r"><code>## CoVaR ##
+
+# The following function computes the difference between the Multivariate Gaussian CDF and the squared significance level.
+# Input:  CoVar (Double), the CoVaR.
+#         VaR (Double), the VaR.
+#         sigma (Matrix), the standard deviation matrix.
+#         alpha (Double), the significance level.
+# Output: target (Double), the value to optimize over.
+bi_pnorm_t &lt;- function(CoVaR, VaR, sigma, alpha){
+  func &lt;- pmvnorm(upper = c(CoVaR, VaR), sigma = sigma)
+  target &lt;- func - alpha^2
+}
+
+# The following function computes the CoVaR.
+# Input:  fit (List), the fit of either DCC or CCC.
+#         alpha (Double), the significance level.
+# Output: CoVaR (Vector), the CoVaR over time.
+covar &lt;- function(fit, alpha){
+  iT &lt;- length(fit$Sigma[,1])
+  
+  D &lt;- array(0, dim = c(2,2,iT))
+  CoVaR &lt;- c()
+  
+  for (t in 1:iT) {
+    D[,,t] = diag(fit$Sigma[t,])
+    
+    SIGMA = D[,,t] %*% fit$Cor[,,t] %*% D[,,t]
+    
+    sdY_2 &lt;- sqrt(SIGMA[1, 2])
+    
+    VaR &lt;- qnorm(alpha, 0, sdY_2)
+    
+    CoVaR[t] &lt;- uniroot(bi_pnorm_t, interval = c(-10^4, 10), VaR = VaR, sigma = SIGMA, alpha=alpha)[[1]]
+  }
+  
+  return(CoVaR)
+}</code></pre>
+<pre class="r"><code># Compute the CoVaR at 0.01 and 0.05 significance level for both models.
+DCC_CoVaR_1 &lt;- covar(Fit_DCC, 0.01)
+DCC_CoVaR_5 &lt;- covar(Fit_DCC, 0.05)
+
+CCC_CoVaR_1 &lt;- covar(Fit_CCC, 0.01)
+CCC_CoVaR_5 &lt;- covar(Fit_CCC, 0.05)</code></pre>
+<pre class="r"><code>par(mfrow = c(2, 1))
+# Plot of CoVaR for DCC
+plot(y = DCC_CoVaR_1,
+     x    = index(resi2),
+     type = &#39;l&#39;,
+     xaxs = &quot;i&quot;,
+     yaxs = &quot;i&quot;,
+     xlab = &#39;Date&#39;,
+     ylab = &#39;CoVaR&#39;,
+     main = &#39;CoVaR of DCC Model&#39;)
+lines(y = DCC_CoVaR_5,
+      x    = index(resi2),
+      type = &#39;l&#39;,
+      xaxs = &quot;i&quot;,
+      yaxs = &quot;i&quot;,
+      col = &#39;red&#39;,
+      lty = &#39;dashed&#39;)
+
+# Plot of CoVaR for CCC
+plot(y= CCC_CoVaR_1,
+     x    = index(resi2),
+     type = &#39;l&#39;,
+     xaxs = &quot;i&quot;,
+     yaxs = &quot;i&quot;,
+     xlab = &#39;Date&#39;,
+     ylab = &#39;CoVaR&#39;,
+     main = &#39;CoVaR of CCC Model&#39;)
+lines(y = CCC_CoVaR_5,
+      x    = index(resi2),
+      type = &#39;l&#39;,
+      xaxs = &quot;i&quot;,
+      yaxs = &quot;i&quot;,
+      col = &#39;red&#39;,
+      lty = &#39;dashed&#39;)</code></pre>
+<p><img src="/blogs/garch_files/figure-html/unnamed-chunk-25-1.png" width="672" /></p>
+<pre class="r"><code>par(mfrow = c(1, 1))</code></pre>

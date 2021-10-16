@@ -1,0 +1,124 @@
+---
+categories:  
+- ""    #the front matter should be like the one found in, e.g., blog2.md. It cannot be like the normal Rmd we used
+- ""
+date: "2021-09-30"
+description: ARDL model application # the title that will show up once someone gets to this page
+draft: false
+image: pic09.jpg # save picture in \static\img\blogs. Acceptable formats= jpg, jpeg, or png . Your iPhone pics wont work
+
+keywords: ""
+slug: ardl_model # slug is the shorthand URL address... no spaces plz
+title: ARDL model application
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readxl)
+library(ARDL)
+library(lmtest)
+library(nardl)
+```
+
+```{r}
+data <- read_excel(here::here("data","mydata.xlsx"), sheet = 1)
+brent <- ts(log(data$brent), frequency = 12, start = c(1998,11), end=c(2020,12))
+wti <- ts(log(data$wti), frequency = 12, start = c(1998,11), end=c(2020,12))
+tasi <-  ts(log(data$tasi), frequency = 12, start = c(1998,11), end=c(2020,12))
+
+#create asymmetric oil price shocks
+brentp <- c(0)
+for (i in 1:length(diff(brent))){
+  value <- brentp[i]+max(diff(brent)[i],0)
+  brentp <- c(brentp,value)
+}
+brent_p <- ts(brentp, frequency = 12, start = c(1998,11), end=c(2020,12))
+
+brentn <- c(0)
+for (i in 1:length(diff(brent))){
+  value2 <- brentp[i]+min(diff(brent)[i],0)
+  brentn <- c(brentn,value2)
+}
+brent_n <- ts(brentn, frequency = 12, start = c(1998,11), end=c(2020,12))
+
+tasip <- c(0)
+for (i in 1:length(diff(tasi))){
+  value3 <- tasip[i]+max(diff(tasi)[i],0)
+  tasip <- c(tasip,value3)
+}
+tasi_p <- ts(tasip, frequency = 12, start = c(1998,11), end=c(2020,12))
+
+tasin <- c(0)
+for (i in 1:length(diff(tasi))){
+  value4 <- tasin[i]+min(diff(tasi)[i],0)
+  tasin <- c(tasin,value4)
+}
+tasi_n <- ts(tasin, frequency = 12, start = c(1998,11), end=c(2020,12))
+
+ts <- ts.union(brent,wti,tasi,brent_p,brent_n,tasi_p,tasi_n)
+
+brent.ret <- ts(diff(log(brent))[-1], frequency = 12, start = c(1998,12), end=c(2020,12))
+tasi.ret <-  ts(diff(log(tasi))[-1], frequency = 12, start = c(1998,12), end=c(2020,12))
+ret <- as.matrix(ts.union(tasi.ret,brent.ret))
+```
+
+```{r}
+par(mfrow = c(1, 1), mar = c(2.2, 2.2, 1, 2.2), cex = 0.8)
+plot.ts(cbind(tasi, brent, wti), plot.type = "single", ylab = "", 
+    col = 4:3)
+legend("topleft", legend = c("TASI", "Brent", "Wti"), col = 4:3, 
+    lty = 1, bty = "n")
+```
+
+```{r}
+grangertest(brent.ret~tasi.ret, order = 2, na.action = na.omit)
+grangertest(tasi.ret~brent.ret, order = 2, na.action = na.omit)
+```
+
+```{r}
+modelslinearbt <- auto_ardl(brent ~ tasi , data = ts, max_order = 5)
+modelslinearbt$top_orders
+```
+```{r}
+ardl_32 <- modelslinearbt$best_model
+summary(ardl_32)
+```
+
+```{r}
+uecm_32 <- uecm(ardl_32)
+summary(uecm_32)
+resi_u <- residuals(uecm_32)
+```
+
+```{r}
+Box.test(resi_u, type = "Ljung-Box")
+```
+无法reject the null 说明没有显著的自相关性
+
+```{r}
+plot(uecm_32)
+```
+
+
+```{r}
+recm_32 <- recm(uecm_32, case = 2)
+summary(recm_32)
+```
+
+```{r}
+bounds_f_test(ardl_32, case = 2)
+```
+
+```{r}
+bounds_t_test(uecm_32, case = 3, alpha = 0.05)
+```
+
+
+```{r}
+reg<-nardl(brent~tasi,data=ts,ic="aic",maxlag = T, graph = F, case =5)
+summary(reg)
+```
+```{r}
+reg_notrend<-nardl(brent~tasi,ts,ic="aic",maxlag =TRUE, graph = F, case =3)
+summary(reg_notrend)
+```

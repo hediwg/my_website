@@ -86,25 +86,25 @@ params:
         title: Risk-Return of DJIA stocks
         url: blogs/risk_return
       - image: pic02.jpg
-        subtitle: By Xinyue Zhao
+        subtitle: 
         title: Pre_programme_assignment
         url: blogs/pre_programme_assignment
       - image: pic03.jpg
-        subtitle: By Xinyue Zhao
+        subtitle: 
         title: A time series data decription example
         url: blogs/data_decription_example
       - image: pic04.jpg
-        subtitle: By Xinyue Zhao
+        subtitle: 
         title: ARDL model
         url: blogs/ardl_model
       - image: pic05.jpg
-        subtitle: Ipsum Dolor Sit Amet
-        title: Consequat
-        url: blogs/ipsum
+        subtitle: 
+        title: GARCH model application
+        url: blogs/garch_model
       - image: pic06.jpg
-        subtitle: Feugiat Amet Tempus
-        title: Etiam
-        url: blogs/ipsum
+        subtitle: 
+        title: VAR model application
+        url: blogs/var_model
   two:
     buttonText: Get Started
     enable: yes
