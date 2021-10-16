@@ -81,14 +81,14 @@ params:
   tiles:
     enable: yes
     showcase:
-      - image: pic01.jpg
-        subtitle: Ipsum Dolor Sit Amet
-        title: Aliquam
-        url: blogs/aliquam
+      - image: lbs.jpg
+        subtitle: From Professor Kostis Christodoulou
+        title: Risk-Return of DJIA stocks
+        url: blogs/risk_return
       - image: pic02.jpg
-        subtitle: Feugiat Amet Tempus
-        title: Tempus
-        url: blogs/tempus
+        subtitle: By Xinyue Zhao
+        title: Pre_programme_assignment
+        url: blogs/pre_programme_assignment
       - image: pic03.jpg
         subtitle: Lorem Etiam Nullam
         title: Magna
