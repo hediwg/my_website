@@ -72,30 +72,30 @@ params:
       - name: Blogs
         url: blogs
       - name: Generic Blog
-        url: blogs/risk_return
+        url: blogs/ardl_model
       - name: Elements
         url: elements.html
     menu: Menu
-    subtitle: By HTML5 Up
-    title: Forty
+    subtitle: Xinyue Zhao
+    title: Portfolio Website
   tiles:
     enable: yes
     showcase:
       - image: lbs.jpg
-        subtitle: From Professor Kostis Christodoulou
-        title: Risk-Return of DJIA stocks
-        url: blogs/risk_return
+        subtitle: 
+        title: Does the yield curve flatten before recessions?
+        url: blogs/yield_curve
       - image: pic02.jpg
         subtitle: 
-        title: Pre_programme_assignment
+        title: About me and my work
         url: blogs/pre_programme_assignment
       - image: pic03.jpg
         subtitle: 
-        title: A time series data decription example
+        title: A time series data description example
         url: blogs/data_decription_example
       - image: pic04.jpg
         subtitle: 
-        title: ARDL model
+        title: ARDL model application
         url: blogs/ardl_model
       - image: pic05.jpg
         subtitle: 

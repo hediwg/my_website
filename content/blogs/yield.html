@@ -1,0 +1,149 @@
+---
+categories:  
+- ""    #the front matter should be like the one found in, e.g., blog2.md. It cannot be like the normal Rmd we used
+- ""
+date: "2021-09-30"
+description: Does the yield curve flatten before recessions? # the title that will show up once someone gets to this page
+draft: false
+image: spices.jpg # save picture in \static\img\blogs. Acceptable formats= jpg, jpeg, or png . Your iPhone pics wont work
+
+keywords: ""
+slug: yield_curve # slug is the shorthand URL address... no spaces plz
+title: Does the yield curve flatten before recessions?
+---
+
+<script src="/rmarkdown-libs/header-attrs/header-attrs.js"></script>
+
+
+<div id="challenge-1-yield-curve-inversion" class="section level1">
+<h1>Challenge 1: Yield Curve inversion</h1>
+<p>Every so often, we hear warnings from commentators on the “inverted yield curve” and its predictive power with respect to recessions. An explainer what a <a href="https://www.reuters.com/article/us-usa-economy-yieldcurve-explainer/explainer-what-is-an-inverted-yield-curve-idUSKBN1O50GA">inverted yield curve is can be found here</a>. If you’d rather listen to something, here is a great podcast from <a href="https://www.podbean.com/media/share/dir-4zgj9-6aefd11">NPR on yield curve indicators</a></p>
+<p>In addition, many articles and commentators think that, e.g., <a href="https://www.bloomberg.com/news/articles/2019-08-14/u-k-yield-curve-inverts-for-first-time-since-financial-crisis"><em>Yield curve inversion is viewed as a harbinger of recession</em></a>. One can always doubt whether inversions are truly a harbinger of recessions, and <a href="https://twitter.com/5_min_macro/status/1161627360946511873">use the attached parable on yield curve inversions</a>.</p>
+<p>In our case we will look at US data and use the <a href="https://fred.stlouisfed.org/">FRED database</a> to download historical yield curve rates, and plot the yield curves since 1999 to see when the yield curves flatten. If you want to know more, a very nice article that explains the <a href="https://fredblog.stlouisfed.org/2018/10/the-data-behind-the-fear-of-yield-curve-inversions/">yield curve is and its inversion can be found here</a>.
+First, we will load the yield curve data file that contains data on the yield curve since 1960-01-01</p>
+<pre class="r"><code>yield_curve &lt;- read_csv(here::here(&quot;data&quot;, &quot;yield_curve.csv&quot;))
+
+glimpse(yield_curve)</code></pre>
+<pre><code>## Rows: 6,884
+## Columns: 5
+## $ date      &lt;date&gt; 1960-01-01, 1960-02-01, 1960-03-01, 1960-04-01, 1960-05-01,…
+## $ series_id &lt;chr&gt; &quot;TB3MS&quot;, &quot;TB3MS&quot;, &quot;TB3MS&quot;, &quot;TB3MS&quot;, &quot;TB3MS&quot;, &quot;TB3MS&quot;, &quot;TB3MS…
+## $ value     &lt;dbl&gt; 4.35, 3.96, 3.31, 3.23, 3.29, 2.46, 2.30, 2.30, 2.48, 2.30, …
+## $ maturity  &lt;chr&gt; &quot;3m&quot;, &quot;3m&quot;, &quot;3m&quot;, &quot;3m&quot;, &quot;3m&quot;, &quot;3m&quot;, &quot;3m&quot;, &quot;3m&quot;, &quot;3m&quot;, &quot;3m&quot;, …
+## $ duration  &lt;chr&gt; &quot;3-Month Treasury Bill&quot;, &quot;3-Month Treasury Bill&quot;, &quot;3-Month T…</code></pre>
+<div id="plotting-the-yield-curve" class="section level2">
+<h2>Plotting the yield curve</h2>
+<p>producing the following three plots</p>
+<div id="yields-on-us-rates-by-duration-since-1960" class="section level3">
+<h3>Yields on US rates by duration since 1960</h3>
+<pre class="r"><code>yield_curve  %&gt;% 
+  mutate(duration=factor(duration, levels=c(&quot;3-Month Treasury Bill&quot;, &quot;6-Month Treasury Bill&quot;,&quot;1-Year Treasury Rate&quot;,&quot;2-Year Treasury Rate&quot;,&quot;3-Year Treasury Rate&quot;,&quot;5-Year Treasury Rate&quot;,&quot;7-Year Treasury Rate&quot;,&quot;10-Year Treasury Rate&quot;,&quot;20-Year Treasury Rate&quot;,&quot;30-Year Treasury Rate&quot;))) %&gt;% 
+  
+  ggplot(aes(x=date, y=value, color=duration)) +
+  geom_line()+
+  facet_wrap(~ duration, ncol=2)+
+  labs(title=&quot;Yields on U.S. Treasury rates since 1960&quot;,
+       y=&quot;Yield(%)&quot;,
+       x=&quot;Date&quot;,
+       caption=&quot;Source: St. Louis Federal Reserve Economic Database (FRED)&quot;)+
+  theme_bw()+
+  theme(legend.position=&quot;none&quot;)</code></pre>
+<p><img src="/blogs/yield_files/figure-html/unnamed-chunk-1-1.png" width="648" style="display: block; margin: auto;" /></p>
+</div>
+<div id="monthly-yields-on-us-rates-by-duration-since-1999-on-a-year-by-year-basis" class="section level3">
+<h3>Monthly yields on US rates by duration since 1999 on a year-by-year basis</h3>
+<pre class="r"><code>yield_curve_2 &lt;- yield_curve  %&gt;%
+  mutate(year=factor(year(date)), 
+         maturity=factor(maturity, levels=c(&quot;3m&quot;, &quot;6m&quot;,&quot;1y&quot;,&quot;2y&quot;,&quot;3y&quot;,&quot;5y&quot;,&quot;7y&quot;,&quot;10y&quot;,&quot;20y&quot;,&quot;30y&quot;)))
+
+yield_curve_2 %&gt;%
+  filter(date&gt;=&quot;1999-01-01&quot;) %&gt;% 
+  ggplot(aes(x=maturity, y=value, group=date, color=year)) +
+  geom_line()+
+  facet_wrap(~ year, ncol=4)+
+  labs(title=&quot;U.S. yield curve&quot;,
+       y=&quot;Yield(%)&quot;,
+       x=&quot;Maturity&quot;,
+       caption=&quot;Source: St. Louis Federal Reserve Economic Database (FRED)&quot;)+
+  theme_bw()+
+  theme(legend.position=&quot;none&quot;)</code></pre>
+<p><img src="/blogs/yield_files/figure-html/unnamed-chunk-2-1.png" width="648" style="display: block; margin: auto;" /></p>
+</div>
+<div id="month-and-10-year-yields-since-1999" class="section level3">
+<h3>3-month and 10-year yields since 1999</h3>
+<pre class="r"><code>yield_curve_3 &lt;- yield_curve %&gt;% 
+  filter(date&gt;=&quot;1999-01-01&quot;, maturity ==&quot;3m&quot; | maturity ==&quot;10y&quot;) %&gt;%
+  ggplot(aes(x=date, y=value, color=duration, group=maturity))+
+  geom_line()+
+  theme_bw()+
+  theme(legend.title=element_blank())+
+  labs(title=&quot;Yields on 3-Month and 10-Year U.S. Treasury Rates since 1999&quot;,
+       y=&quot;Yield(%)&quot;,
+       x=&quot;Date&quot;,
+       caption=&quot;Source: St. Louis Federal Reserve Economic Database (FRED)&quot;)
+yield_curve_3</code></pre>
+<p><img src="/blogs/yield_files/figure-html/treasury_rates-1.png" width="648" style="display: block; margin: auto;" /></p>
+<p>According to <a href="https://en.wikipedia.org/wiki/List_of_recessions_in_the_United_States">Wikipedia’s list of recession in the United States</a>, since 1999 there have been two recession in the US: between Mar 2001–Nov 2001 and between Dec 2007–June 2009. Does the yield curve seem to flatten before these recessions? Can a yield curve flattening really mean a recession is coming in the US? Since 1999, when did short-term (3 months) yield more than longer term (10 years) debt?</p>
+<ul>
+<li>For the first, the code below creates a dataframe with all US recessions since 1946</li>
+</ul>
+<pre class="r"><code># get US recession dates after 1946 from Wikipedia 
+# https://en.wikipedia.org/wiki/List_of_recessions_in_the_United_States
+
+recessions &lt;- tibble(
+  from = c(&quot;1948-11-01&quot;, &quot;1953-07-01&quot;, &quot;1957-08-01&quot;, &quot;1960-04-01&quot;, &quot;1969-12-01&quot;, &quot;1973-11-01&quot;, &quot;1980-01-01&quot;,&quot;1981-07-01&quot;, &quot;1990-07-01&quot;, &quot;2001-03-01&quot;, &quot;2007-12-01&quot;,&quot;2020-02-01&quot;),  
+  to = c(&quot;1949-10-01&quot;, &quot;1954-05-01&quot;, &quot;1958-04-01&quot;, &quot;1961-02-01&quot;, &quot;1970-11-01&quot;, &quot;1975-03-01&quot;, &quot;1980-07-01&quot;, &quot;1982-11-01&quot;, &quot;1991-03-01&quot;, &quot;2001-11-01&quot;, &quot;2009-06-01&quot;, &quot;2020-04-30&quot;) 
+  )  %&gt;% 
+  mutate(From = ymd(from), 
+         To=ymd(to),
+         duration_days = To-From)
+
+recessions</code></pre>
+<pre><code>## # A tibble: 12 × 5
+##    from       to         From       To         duration_days
+##    &lt;chr&gt;      &lt;chr&gt;      &lt;date&gt;     &lt;date&gt;     &lt;drtn&gt;       
+##  1 1948-11-01 1949-10-01 1948-11-01 1949-10-01 334 days     
+##  2 1953-07-01 1954-05-01 1953-07-01 1954-05-01 304 days     
+##  3 1957-08-01 1958-04-01 1957-08-01 1958-04-01 243 days     
+##  4 1960-04-01 1961-02-01 1960-04-01 1961-02-01 306 days     
+##  5 1969-12-01 1970-11-01 1969-12-01 1970-11-01 335 days     
+##  6 1973-11-01 1975-03-01 1973-11-01 1975-03-01 485 days     
+##  7 1980-01-01 1980-07-01 1980-01-01 1980-07-01 182 days     
+##  8 1981-07-01 1982-11-01 1981-07-01 1982-11-01 488 days     
+##  9 1990-07-01 1991-03-01 1990-07-01 1991-03-01 243 days     
+## 10 2001-03-01 2001-11-01 2001-03-01 2001-11-01 245 days     
+## 11 2007-12-01 2009-06-01 2007-12-01 2009-06-01 548 days     
+## 12 2020-02-01 2020-04-30 2020-02-01 2020-04-30  89 days</code></pre>
+<pre class="r"><code>yield_curve_spread &lt;- yield_curve %&gt;%
+  select(date, maturity, value)%&gt;%
+  filter(maturity == &quot;3m&quot; | maturity == &quot;10y&quot;)%&gt;%
+  pivot_wider(names_from = maturity, values_from = value)
+
+colnames(yield_curve_spread) &lt;- c(&quot;date&quot;, &quot;three_month&quot;, &quot;ten_year&quot;)
+
+yield_curve_spread &lt;- yield_curve_spread%&gt;%
+  mutate(diff = ten_year - three_month)
+
+recessions_1 &lt;- recessions %&gt;%
+  filter(year(From) &gt;= 1960)</code></pre>
+<pre class="r"><code>#graph 
+
+ggplot(yield_curve_spread, aes(x = date, y = diff)) +
+  geom_line(size = 0.1)+
+  geom_hline(yintercept=0)+
+  theme_minimal(base_size = 7) + 
+  geom_ribbon(aes(ymin = pmin(diff,0),ymax = 0),fill = &quot;indianred2&quot;,alpha = 0.5) + 
+  geom_ribbon(aes(ymin = 0,ymax = pmax(0,diff)),fill = &quot;skyblue3&quot;,alpha = 0.5) +
+  geom_rug(sides = &quot;b&quot;, size = 0.1, color = if_else(yield_curve_spread$diff&gt;0, &quot;skyblue3&quot;,&quot;indianred2&quot;))+
+  annotate(&quot;rect&quot;, xmin = recessions_1$From, xmax = recessions_1$To, 
+           ymin = -Inf, ymax = Inf, alpha = 0.1)+
+  labs(title=&quot;Yield Curve Inveresion: 10-year minus 3-month U.S.Treasury Rates&quot;,
+       subtitle = &quot;Difference in % points, monthly average 
+Shaded areas correspond to recessions&quot;,
+       y=&quot;Difference (10 year - 3 month) yield in %&quot;,
+       x=NULL,
+       caption=&quot;Source: FRED, Federal Reserve Bank of St. Louis&quot;)</code></pre>
+<p><img src="/blogs/yield_files/figure-html/unnamed-chunk-4-1.png" width="648" style="display: block; margin: auto;" /></p>
+</div>
+</div>
+</div>

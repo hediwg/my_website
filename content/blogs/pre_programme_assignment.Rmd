@@ -3,13 +3,13 @@ categories:
 - ""    #the front matter should be like the one found in, e.g., blog2.md. It cannot be like the normal Rmd we used
 - ""
 date: "2021-09-30"
-description: Pre_programme_assignment # the title that will show up once someone gets to this page
+description: About me and my work # the title that will show up once someone gets to this page
 draft: false
 image: pic07.jpg # save picture in \static\img\blogs. Acceptable formats= jpg, jpeg, or png . Your iPhone pics wont work
 
 keywords: ""
 slug: pre_programme_assignment # slug is the shorthand URL address... no spaces plz
-title: Pre_programme_assignment
+title: About me and my work
 ---
   
 
@@ -20,11 +20,6 @@ library(here)
 library(janitor)
 ```
 
-The goal is to test your software installation, to demonstrate competency in Markdown, and in the basics of `ggplot`.
-
-> Please delete all the intro text I wrote from line 22 to line 69 and start writing your short biography after this blockquote.
-
-# Task 1: Short biography written using markdown
 
 ## A Short Biography
 
@@ -38,9 +33,7 @@ You can visit [my LinkedIn profile](http://www.linkedin.com/in/xinyuezhao7) to k
 
 Hope to meet you on campus!
     
-# Task 2: `gapminder` country comparison
-
-You have seen the `gapminder` dataset that has data on life expectancy, population, and GDP per capita for 142 countries from 1952 to 2007. To get a glimpse of the dataframe, namely to see the variable names, variable types, etc., we use the `glimpse` function. We also want to have a look at the first 20 rows of data.
+#`gapminder` country comparison analysis
 
 ```{r}
 glimpse(gapminder)
@@ -49,9 +42,6 @@ head(gapminder, 20) # look at the first 20 rows of the dataframe
 
 ```
 
-Your task is to produce two graphs of how life expectancy has changed over the years for the `country` and the `continent` you come from.
-
-I have created the `country_data` and `continent_data` with the code below.
 
 ```{r}
 country_data <- gapminder %>% 
@@ -61,7 +51,6 @@ continent_data <- gapminder %>%
             filter(continent == "Asia")
 ```
 
-First, create a plot of life expectancy over time for the single country you chose. Map `year` on the x-axis, and `lifeExp` on the y-axis. You should also use `geom_point()` to see the actual data points and `geom_smooth(se = FALSE)` to plot the underlying trendlines. You need to remove the comments **\#** from the lines below for your code to run.
 
 ```{r, lifeExp_one_country}
 plot1 <- ggplot(data = country_data, mapping = aes(x = year, y = lifeExp))+
@@ -71,7 +60,6 @@ NULL
 plot1
 ```
 
-Next we need to add a title. Create a new plot, or extend plot1, using the `labs()` function to add an informative title to the plot.
 
 ```{r, lifeExp_one_country_with_label}
 plot1<- plot1 +
@@ -84,7 +72,6 @@ plot1<- plot1 +
 plot1
 ```
 
-Secondly, produce a plot for all countries in the *continent* you come from. (Hint: map the `country` variable to the colour aesthetic. You also want to map `country` to the `group` aesthetic, so all points for each country are grouped together).
 
 ```{r lifeExp_one_continent}
 ggplot(continent_data, mapping = aes(x = year, y = lifeExp , colour=country, group = country))+
@@ -93,7 +80,6 @@ ggplot(continent_data, mapping = aes(x = year, y = lifeExp , colour=country, gro
    NULL
 ```
 
-Finally, using the original `gapminder` data, produce a life expectancy over time graph, grouped (or faceted) by continent. We will remove all legends, adding the `theme(legend.position="none")` in the end of our ggplot.
 
 ```{r lifeExp_facet_by_continent}
  ggplot(data = gapminder , mapping = aes(x = year , y = lifeExp , colour= country))+
@@ -104,12 +90,7 @@ Finally, using the original `gapminder` data, produce a life expectancy over tim
    NULL
 ```
 
-Given these trends, what can you say about life expectancy since 1952? Again, don't just say what's happening in the graph. Tell some sort of story and speculate about the differences in the patterns.
 
-
-> Type your answer after this blockquote.
-
-**Answer:** 
 
 The life expectancy has been increasing since 1952 in Americas, Europe, Oceania, most Asian countries and some African countries. But in some Middle Eastern countries and many African countries, life expectancy has decreased significantly since 1985. 
 
@@ -120,11 +101,10 @@ However, the decrease of life expectancy in certain areas demonstrates that ther
 
 
 
-# Task 3: Animal rescue incidents attended by the London Fire Brigade
+#Animal rescue incidents attended by the London Fire Brigade
 
 [The London Fire Brigade](https://data.london.gov.uk/dataset/animal-rescue-incidents-attended-by-lfb) attends a range of non-fire incidents (which we call 'special services'). These 'special services' include assistance to animals that may be trapped or in distress. The data is provided from January 2009 and is updated monthly. A range of information is supplied for each incident including some location information (postcode, borough, ward), as well as the data/time of the incidents. We do not routinely record data about animal deaths or injuries.
 
-Please note that any cost included is a notional cost calculated based on the length of time rounded up to the nearest hour spent by Pump, Aerial and FRU appliances at the incident and charged at the current Brigade hourly rate.
 
 ```{r load_animal_rescue_data, warning=FALSE, message=FALSE}
 
@@ -137,7 +117,7 @@ animal_rescue <- read_csv(url,
 
 glimpse(animal_rescue)
 ```
-One of the more useful things one can do with any data set is quick counts, namely to see how many observations fall within one category. For instance, if we wanted to count the number of incidents by year, we would either use `group_by()... summarise()` or, simply [`count()`](https://dplyr.tidyverse.org/reference/count.html)
+
 
 ```{r, instances_by_calendar_year}
 
@@ -150,7 +130,7 @@ animal_rescue %>%
 
 ```
 
-Let us try to see how many incidents we have by animal group. Again, we can do this either using group_by() and summarise(), or by using count()
+
 
 ```{r, animal_group_percentages}
 animal_rescue %>% 
@@ -178,17 +158,9 @@ animal_rescue %>%
 ```
 
 Do you see anything strange in these tables? 
-
-**Answer:** There are two rows for cats, one is Cat with 3736 counts and the other one is cat with 17 counts.
+There are two rows for cats, one is Cat with 3736 counts and the other one is cat with 17 counts.
 
 Finally, let us have a loot at the notional cost for rescuing each of these animals. As the LFB says,
-
-> Please note that any cost included is a notional cost calculated based on the length of time rounded up to the nearest hour spent by Pump, Aerial and FRU appliances at the incident and charged at the current Brigade hourly rate.
-
-There is two things we will do:
-
-1. Calculate the mean and median `incident_notional_cost` for each `animal_group_parent`
-2. Plot a boxplot to get a feel for the distribution of `incident_notional_cost` by `animal_group_parent`.
 
 
 Before we go on, however, we need to fix `incident_notional_cost` as it is stored as a `chr`, or character, rather than a number.
@@ -208,8 +180,6 @@ animal_rescue <- animal_rescue %>%
 typeof(animal_rescue$incident_notional_cost)
 
 ```
-
-Now tht incident_notional_cost is numeric, let us quickly calculate summary statistics for each animal group. 
 
 
 ```{r, stats_on_incident_cost,message=FALSE, warning=FALSE}
@@ -236,11 +206,6 @@ animal_rescue %>%
 
 ```
 
-
-Compare the mean and the median for each animal group. waht do you think this is telling us?
-Anything else that stands out? Any outliers?
-
-**Answer:**
 
 According to the plot and linear fit generated by the code below, there appears a positive relationship between the mean and the median of notional cost for rescuing each animal group, since most points lie within the confidence intervals and there is a positive slope of the fitted line. This makes sense since the mean and the median are both reflecting the “average” cost of saving a group of animal. 
 
@@ -310,9 +275,6 @@ base_plot + stat_ecdf(geom = "step", pad = FALSE) +
 
 ```
 
-Which of these four graphs do you think best communicates the variability of the `incident_notional_cost` values? Also, can you please tell some sort of story (which animals are more expensive to rescue than others, the spread of values) and speculate about the differences in the patterns.
-
-**Answer:**
 
 Common examples of measures of statistical dispersion are [the variance, standard deviation, and interquartile range](https://en.wikipedia.org/wiki/Statistical_dispersion). I think that these features are best illustrated by the boxplot, because it displays the minimum, first quartile, median, third quartile, and maximum of the data, besides, it demonstrates the symmetry, Skewness, and outliers for a normal distribution.
 
