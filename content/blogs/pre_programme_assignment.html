@@ -3,24 +3,18 @@ categories:
 - ""    #the front matter should be like the one found in, e.g., blog2.md. It cannot be like the normal Rmd we used
 - ""
 date: "2021-09-30"
-description: Pre_programme_assignment # the title that will show up once someone gets to this page
+description: About me and my work # the title that will show up once someone gets to this page
 draft: false
 image: pic07.jpg # save picture in \static\img\blogs. Acceptable formats= jpg, jpeg, or png . Your iPhone pics wont work
 
 keywords: ""
 slug: pre_programme_assignment # slug is the shorthand URL address... no spaces plz
-title: Pre_programme_assignment
+title: About me and my work
 ---
 
 <script src="/rmarkdown-libs/header-attrs/header-attrs.js"></script>
 
 
-<p>The goal is to test your software installation, to demonstrate competency in Markdown, and in the basics of <code>ggplot</code>.</p>
-<blockquote>
-<p>Please delete all the intro text I wrote from line 22 to line 69 and start writing your short biography after this blockquote.</p>
-</blockquote>
-<div id="task-1-short-biography-written-using-markdown" class="section level1">
-<h1>Task 1: Short biography written using markdown</h1>
 <div id="a-short-biography" class="section level2">
 <h2>A Short Biography</h2>
 <p>My name is <strong>Xinyue Zhao</strong>. I am a <strong>MFA 22’</strong> at LBS. I am equipped with some modelling skills and research skills, as illustrated below.</p>
@@ -31,11 +25,7 @@ title: Pre_programme_assignment
 <p>You can visit <a href="http://www.linkedin.com/in/xinyuezhao7">my LinkedIn profile</a> to know about me. By the way I have a super cute Miniature pinscher. Her name is Harry and she looks like this:
 <img src="https://www.trainpetdog.com/wp-content/themes/mytheme/images/about-page-images/Miniature-Pinscher-origin.png" alt="Miniature pinscher" />.</p>
 <p>Hope to meet you on campus!</p>
-</div>
-</div>
-<div id="task-2-gapminder-country-comparison" class="section level1">
-<h1>Task 2: <code>gapminder</code> country comparison</h1>
-<p>You have seen the <code>gapminder</code> dataset that has data on life expectancy, population, and GDP per capita for 142 countries from 1952 to 2007. To get a glimpse of the dataframe, namely to see the variable names, variable types, etc., we use the <code>glimpse</code> function. We also want to have a look at the first 20 rows of data.</p>
+<p>#<code>gapminder</code> country comparison analysis</p>
 <pre class="r"><code>glimpse(gapminder)</code></pre>
 <pre><code>## Rows: 1,704
 ## Columns: 6
@@ -69,14 +59,11 @@ title: Pre_programme_assignment
 ## 18 Albania     Europe     1977    68.9  2509048     3533.
 ## 19 Albania     Europe     1982    70.4  2780097     3631.
 ## 20 Albania     Europe     1987    72    3075321     3739.</code></pre>
-<p>Your task is to produce two graphs of how life expectancy has changed over the years for the <code>country</code> and the <code>continent</code> you come from.</p>
-<p>I have created the <code>country_data</code> and <code>continent_data</code> with the code below.</p>
 <pre class="r"><code>country_data &lt;- gapminder %&gt;% 
             filter(country == &quot;China&quot;) 
 
 continent_data &lt;- gapminder %&gt;% 
             filter(continent == &quot;Asia&quot;)</code></pre>
-<p>First, create a plot of life expectancy over time for the single country you chose. Map <code>year</code> on the x-axis, and <code>lifeExp</code> on the y-axis. You should also use <code>geom_point()</code> to see the actual data points and <code>geom_smooth(se = FALSE)</code> to plot the underlying trendlines. You need to remove the comments <strong>#</strong> from the lines below for your code to run.</p>
 <pre class="r"><code>plot1 &lt;- ggplot(data = country_data, mapping = aes(x = year, y = lifeExp))+
 geom_point()+
 geom_smooth(se = FALSE)+
@@ -84,7 +71,6 @@ NULL
 plot1</code></pre>
 <pre><code>## `geom_smooth()` using method = &#39;loess&#39; and formula &#39;y ~ x&#39;</code></pre>
 <p><img src="/blogs/pre_programme_assignment_files/figure-html/lifeExp_one_country-1.png" width="672" /></p>
-<p>Next we need to add a title. Create a new plot, or extend plot1, using the <code>labs()</code> function to add an informative title to the plot.</p>
 <pre class="r"><code>plot1&lt;- plot1 +
   labs(title = &quot;Life Expectancy Over Time in China&quot;,
       x = &quot;Year&quot;,
@@ -95,14 +81,12 @@ plot1</code></pre>
 plot1</code></pre>
 <pre><code>## `geom_smooth()` using method = &#39;loess&#39; and formula &#39;y ~ x&#39;</code></pre>
 <p><img src="/blogs/pre_programme_assignment_files/figure-html/lifeExp_one_country_with_label-1.png" width="672" /></p>
-<p>Secondly, produce a plot for all countries in the <em>continent</em> you come from. (Hint: map the <code>country</code> variable to the colour aesthetic. You also want to map <code>country</code> to the <code>group</code> aesthetic, so all points for each country are grouped together).</p>
 <pre class="r"><code>ggplot(continent_data, mapping = aes(x = year, y = lifeExp , colour=country, group = country))+
    geom_point() + 
    geom_smooth(se = FALSE) +
    NULL</code></pre>
 <pre><code>## `geom_smooth()` using method = &#39;loess&#39; and formula &#39;y ~ x&#39;</code></pre>
 <p><img src="/blogs/pre_programme_assignment_files/figure-html/lifeExp_one_continent-1.png" width="672" /></p>
-<p>Finally, using the original <code>gapminder</code> data, produce a life expectancy over time graph, grouped (or faceted) by continent. We will remove all legends, adding the <code>theme(legend.position="none")</code> in the end of our ggplot.</p>
 <pre class="r"><code> ggplot(data = gapminder , mapping = aes(x = year , y = lifeExp , colour= country))+
    geom_point() + 
    geom_smooth(se = FALSE) +
@@ -111,19 +95,11 @@ plot1</code></pre>
    NULL</code></pre>
 <pre><code>## `geom_smooth()` using method = &#39;loess&#39; and formula &#39;y ~ x&#39;</code></pre>
 <p><img src="/blogs/pre_programme_assignment_files/figure-html/lifeExp_facet_by_continent-1.png" width="672" /></p>
-<p>Given these trends, what can you say about life expectancy since 1952? Again, don’t just say what’s happening in the graph. Tell some sort of story and speculate about the differences in the patterns.</p>
-<blockquote>
-<p>Type your answer after this blockquote.</p>
-</blockquote>
-<p><strong>Answer:</strong></p>
 <p>The life expectancy has been increasing since 1952 in Americas, Europe, Oceania, most Asian countries and some African countries. But in some Middle Eastern countries and many African countries, life expectancy has decreased significantly since 1985.</p>
 <p>The increasing life expectancy in most areas is easy to interpret: fewer infant death after the 1900s, and longer life span due to improvement in medicine, vaccines, and sanitary conditions worldwide.</p>
 <p>However, the decrease of life expectancy in certain areas demonstrates that there is a very high inequality in how health was distributed across the world. The decrease in Middle Eastern countries like Iraq and Syria could be explained by wars and regional conflicts, such as the Gulf War, the Irap War, the Syrian Civil War, and the Arab Spring. In South Africa and Zimbabwe, however, <a href="https://www.thenewhumanitarian.org/news/2009/11/21/life-expectancy-drops">The HIV/AIDS epidemic contributed to a 43 percent reduction in population growth between 2001 and 2008; a fall in birth rates also played a role</a>. Besides, the government social programmes fail to address the needs of tuberculosis, HIV, and AIDS patients and their children who become orphans.</p>
-</div>
-<div id="task-3-animal-rescue-incidents-attended-by-the-london-fire-brigade" class="section level1">
-<h1>Task 3: Animal rescue incidents attended by the London Fire Brigade</h1>
+<p>#Animal rescue incidents attended by the London Fire Brigade</p>
 <p><a href="https://data.london.gov.uk/dataset/animal-rescue-incidents-attended-by-lfb">The London Fire Brigade</a> attends a range of non-fire incidents (which we call ‘special services’). These ‘special services’ include assistance to animals that may be trapped or in distress. The data is provided from January 2009 and is updated monthly. A range of information is supplied for each incident including some location information (postcode, borough, ward), as well as the data/time of the incidents. We do not routinely record data about animal deaths or injuries.</p>
-<p>Please note that any cost included is a notional cost calculated based on the length of time rounded up to the nearest hour spent by Pump, Aerial and FRU appliances at the incident and charged at the current Brigade hourly rate.</p>
 <pre class="r"><code>url &lt;- &quot;https://data.london.gov.uk/download/animal-rescue-incidents-attended-by-lfb/8a7d91c2-9aec-4bde-937a-3998f4717cd8/Animal%20Rescue%20incidents%20attended%20by%20LFB%20from%20Jan%202009.csv&quot;
 
 animal_rescue &lt;- read_csv(url,
@@ -165,7 +141,6 @@ glimpse(animal_rescue)</code></pre>
 ## $ northing_rounded              &lt;dbl&gt; 170050, 167550, 164950, 190650, 192350, …
 ## $ latitude                      &lt;chr&gt; &quot;NULL&quot;, &quot;51.39095371&quot;, &quot;51.36894086&quot;, &quot;5…
 ## $ longitude                     &lt;chr&gt; &quot;NULL&quot;, &quot;-0.064166887&quot;, &quot;-0.161985191&quot;, …</code></pre>
-<p>One of the more useful things one can do with any data set is quick counts, namely to see how many observations fall within one category. For instance, if we wanted to count the number of incidents by year, we would either use <code>group_by()... summarise()</code> or, simply <a href="https://dplyr.tidyverse.org/reference/count.html"><code>count()</code></a></p>
 <pre class="r"><code>animal_rescue %&gt;% 
   dplyr::group_by(cal_year) %&gt;% 
   summarise(count=n())</code></pre>
@@ -203,7 +178,6 @@ glimpse(animal_rescue)</code></pre>
 ## 11     2019   604
 ## 12     2020   758
 ## 13     2021   648</code></pre>
-<p>Let us try to see how many incidents we have by animal group. Again, we can do this either using group_by() and summarise(), or by using count()</p>
 <pre class="r"><code>animal_rescue %&gt;% 
   group_by(animal_group_parent) %&gt;% 
   
@@ -251,17 +225,9 @@ glimpse(animal_rescue)</code></pre>
 ##  9 Squirrel                            68    0.86
 ## 10 Unknown - Heavy Livestock Animal    50    0.64
 ## # … with 18 more rows</code></pre>
-<p>Do you see anything strange in these tables?</p>
-<p><strong>Answer:</strong> There are two rows for cats, one is Cat with 3736 counts and the other one is cat with 17 counts.</p>
+<p>Do you see anything strange in these tables?
+There are two rows for cats, one is Cat with 3736 counts and the other one is cat with 17 counts.</p>
 <p>Finally, let us have a loot at the notional cost for rescuing each of these animals. As the LFB says,</p>
-<blockquote>
-<p>Please note that any cost included is a notional cost calculated based on the length of time rounded up to the nearest hour spent by Pump, Aerial and FRU appliances at the incident and charged at the current Brigade hourly rate.</p>
-</blockquote>
-<p>There is two things we will do:</p>
-<ol style="list-style-type: decimal">
-<li>Calculate the mean and median <code>incident_notional_cost</code> for each <code>animal_group_parent</code></li>
-<li>Plot a boxplot to get a feel for the distribution of <code>incident_notional_cost</code> by <code>animal_group_parent</code>.</li>
-</ol>
 <p>Before we go on, however, we need to fix <code>incident_notional_cost</code> as it is stored as a <code>chr</code>, or character, rather than a number.</p>
 <pre class="r"><code># what type is variable incident_notional_cost from dataframe `animal_rescue`
 typeof(animal_rescue$incident_notional_cost)</code></pre>
@@ -275,7 +241,6 @@ animal_rescue &lt;- animal_rescue %&gt;%
 # incident_notional_cost from dataframe `animal_rescue` is now &#39;double&#39; or numeric
 typeof(animal_rescue$incident_notional_cost)</code></pre>
 <pre><code>## [1] &quot;double&quot;</code></pre>
-<p>Now tht incident_notional_cost is numeric, let us quickly calculate summary statistics for each animal group.</p>
 <pre class="r"><code>animal_rescue %&gt;% 
   
   # group by animal_group_parent
@@ -316,9 +281,6 @@ typeof(animal_rescue$incident_notional_cost)</code></pre>
 ## 16 Rabbit                                309.               326             32.2
 ## # … with 3 more variables: min_incident_cost &lt;dbl&gt;, max_incident_cost &lt;dbl&gt;,
 ## #   count &lt;int&gt;</code></pre>
-<p>Compare the mean and the median for each animal group. waht do you think this is telling us?
-Anything else that stands out? Any outliers?</p>
-<p><strong>Answer:</strong></p>
 <p>According to the plot and linear fit generated by the code below, there appears a positive relationship between the mean and the median of notional cost for rescuing each animal group, since most points lie within the confidence intervals and there is a positive slope of the fitted line. This makes sense since the mean and the median are both reflecting the “average” cost of saving a group of animal.</p>
 <p>The Horse and Cow groups definitely stand out since their mean and median are both much larger than others, and their data points lie in the upper right corner of the line.</p>
 <p>Unknown - Heavy Livestock Animal is an obvious outlier. Its mean cost is too high relative to the low median cost compared with other groups. A possible reason could be that there are few times when saving these heavy livestock animal cost a lot, but most of the time the cost is low, and the mean is driven up by the few high costs.</p>
@@ -377,8 +339,6 @@ base_plot + geom_histogram()</code></pre>
 <pre class="r"><code>base_plot + stat_ecdf(geom = &quot;step&quot;, pad = FALSE) +
   scale_y_continuous(labels = scales::percent)</code></pre>
 <p><img src="/blogs/pre_programme_assignment_files/figure-html/plots_on_incident_cost_by_animal_group-4.png" width="672" /></p>
-<p>Which of these four graphs do you think best communicates the variability of the <code>incident_notional_cost</code> values? Also, can you please tell some sort of story (which animals are more expensive to rescue than others, the spread of values) and speculate about the differences in the patterns.</p>
-<p><strong>Answer:</strong></p>
 <p>Common examples of measures of statistical dispersion are <a href="https://en.wikipedia.org/wiki/Statistical_dispersion">the variance, standard deviation, and interquartile range</a>. I think that these features are best illustrated by the boxplot, because it displays the minimum, first quartile, median, third quartile, and maximum of the data, besides, it demonstrates the symmetry, Skewness, and outliers for a normal distribution.</p>
 <p>Horses and cows are more expensive to rescue than others since their distributions are centered around 740 and 634 and heavily skewed to the right, whic mean that thier entire distribution are more tilted to the expensive side than other groups.</p>
 <p>The spread of values in the distribution of cows, ferrets, and rabbits are larger than others, possibly because they are rescued for fewer times than other groups according to the variable <code>count</code>. Therefore, the data could be less stable, and the rescuers could lack experience so the situations of rescue varies a lot and there is no pattern found of the animals’ action.</p>

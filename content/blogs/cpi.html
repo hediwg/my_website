@@ -12,7 +12,7 @@ slug: cpi # slug is the shorthand URL address... no spaces plz
 title: How has the CPI and its components changed over the last few years?
 ---
 
-<script src="data processing example_files/header-attrs/header-attrs.js"></script>
+<script src="/rmarkdown-libs/header-attrs/header-attrs.js"></script>
 
 
 <div id="how-has-the-cpi-and-its-components-changed-over-the-last-few-years" class="section level1">
@@ -75,7 +75,7 @@ cpidatalist_3 &lt;- rbind(cpidatalist_1, cpidatalist_2) %&gt;%
   facet_wrap(~namef, scales = &quot;free&quot;)+
   labs( y = &quot;YoY % Change&quot;, title= &quot;Yearly change of US CPI (AII Items) and its components&quot;,subtitle = &quot;YoY change being positive or negative \n Jan 2000 to Aug 2021&quot;, caption = &quot;Data from St. Louis Fed FRED \n  https://fredaccount.stlouisfed.org/public/datalist/843&quot;)+
   theme(legend.position=&quot;none&quot;)</code></pre>
-<p><img src="/blogs/data%20processing%20example_files/figure-html/unnamed-chunk-6-1.png" width="648" style="display: block; margin: auto;" /></p>
+<p><img src="/blogs/cpi_files/figure-html/unnamed-chunk-6-1.png" width="648" style="display: block; margin: auto;" /></p>
 <p>This graphs is fine, but perhaps has too many sub-categories. You can find the <a href="https://www.bls.gov/cpi/tables/relative-importance/2020.htm">relative importance of components in the Consumer Price Indexes: U.S. city average, December 2020</a> here. Can you choose a smaller subset of the components you have and only list the major categories (Housing, Transportation, Food and beverages, Medical care, Education and communication, Recreation, and Apparel), sorted according to their relative importance?</p>
 <pre class="r"><code>importance_url &lt;- &quot;https://www.bls.gov/cpi/tables/relative-importance/2020.htm&quot;
 
@@ -125,5 +125,5 @@ imp_cpidatalist_2 &lt;- merge(x=imp_cpidatalist_1,y=imp_list,by=&quot;symbol&quo
   facet_wrap(~namef, scales = &quot;free&quot;)+
   labs( y = &quot;YoY % Change&quot;, title= &quot;Yearly change of important US CPI components&quot;,subtitle = &quot;YoY change being positive or negative \n Jan 2000 to Aug 2021&quot;, caption = &quot;Data from St. Louis Fed FRED \n  https://fredaccount.stlouisfed.org/public/datalist/843&quot;)+
   theme(legend.position=&quot;none&quot;)</code></pre>
-<p><img src="/blogs/data%20processing%20example_files/figure-html/unnamed-chunk-11-1.png" width="648" style="display: block; margin: auto;" /></p>
+<p><img src="/blogs/cpi_files/figure-html/unnamed-chunk-11-1.png" width="648" style="display: block; margin: auto;" /></p>
 </div>

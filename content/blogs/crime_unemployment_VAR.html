@@ -15,9 +15,7 @@ title: VAR model application
 <script src="/rmarkdown-libs/header-attrs/header-attrs.js"></script>
 
 
-<p>This is an <a href="http://rmarkdown.rstudio.com">R Markdown</a> Notebook. When you execute code within the notebook, the results appear beneath the code.</p>
-<p>Try executing this chunk by clicking the <em>Run</em> button within the chunk or by placing your cursor inside it and pressing <em>Cmd+Shift+Enter</em>.</p>
-<p>首先处理犯罪率数据</p>
+<p>This code is from one of my group research on time series analysis of immigration in USA. We build a VAR system between crime rate and immigration fitted residuals from 1990 to 2018. The residual process is not shown here but we basically fiited the series using Model C in Perron (1989) to allow for structual breaks in the data.</p>
 <pre class="r"><code>crime_rate_data &lt;- read_excel(here::here(&quot;data&quot;,&quot;crime_rate.xlsx&quot;), sheet = 2)
 crime_rate &lt;- ts(crime_rate_data$`Reported violent crime rate in the U.S. 1990-2018`, frequency = 1, start = 1990)
 plot(crime_rate)</code></pre>
@@ -36,7 +34,7 @@ plot(crime_rate)</code></pre>
 ##     0.4044 
 ## 
 ## Description:
-##  Sat Oct 16 16:16:41 2021 by user: 
+##  Tue Oct 19 19:02:30 2021 by user: 
 ## 
 ## 
 ## Title:
@@ -51,7 +49,7 @@ plot(crime_rate)</code></pre>
 ##     0.5138 
 ## 
 ## Description:
-##  Sat Oct 16 16:16:41 2021 by user: 
+##  Tue Oct 19 19:02:30 2021 by user: 
 ## 
 ## 
 ## Title:
@@ -66,8 +64,8 @@ plot(crime_rate)</code></pre>
 ##     0.4645 
 ## 
 ## Description:
-##  Sat Oct 16 16:16:41 2021 by user:</code></pre>
-<p>由此说明犯罪率数据存在单位根，接下来检验平稳性，考虑先取对数，再取差分看看能不能变平稳。</p>
+##  Tue Oct 19 19:02:30 2021 by user:</code></pre>
+<p>This shows that the crime rate data has unit roots. Next, to test the stationarity, consider taking the logarithm first, and then taking the difference to see if it can become stable.</p>
 <pre class="r"><code>crime_rate_log_diff&lt;-diff(log(crime_rate))
 plot(crime_rate_log_diff)</code></pre>
 <p><img src="/blogs/crime_unemployment_VAR_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
@@ -85,8 +83,8 @@ plot(crime_rate_log_diff)</code></pre>
 ##     0.02918 
 ## 
 ## Description:
-##  Sat Oct 16 16:16:41 2021 by user:</code></pre>
-<p>看来取了对数，再取差分就能通过DF检验。</p>
+##  Tue Oct 19 19:02:30 2021 by user:</code></pre>
+<p>taking the logarithm first, and then taking the difference makes it pass the DF test.</p>
 <pre class="r"><code>for(i in 1:12) print(Box.test(crime_rate_log_diff,type=&quot;Ljung-Box&quot;,lag=i))</code></pre>
 <pre><code>## 
 ##  Box-Ljung test
@@ -159,7 +157,7 @@ plot(crime_rate_log_diff)</code></pre>
 ## 
 ## data:  crime_rate_log_diff
 ## X-squared = 26.116, df = 12, p-value = 0.01034</code></pre>
-<p>由此可见，除了lag=4，其他情况都能拒绝数据不存在序列相依性的原假设，即取对数、差分后不是一个白噪声。</p>
+<p>This shows that the series after taking the logarithm first, and then taking the difference is not a white noise.</p>
 <pre class="r"><code>fit_crime_rate_log_diff &lt;- auto.arima(crime_rate_log_diff)
 fit_crime_rate_log_diff</code></pre>
 <pre><code>## Series: crime_rate_log_diff 
@@ -173,9 +171,7 @@ fit_crime_rate_log_diff</code></pre>
 ## sigma^2 estimated as 0.0007999:  log likelihood=60.96
 ## AIC=-115.91   AICc=-114.91   BIC=-111.92</code></pre>
 <pre class="r"><code>acf(crime_rate_log_diff)</code></pre>
-<p><img src="/blogs/crime_unemployment_VAR_files/figure-html/unnamed-chunk-7-1.png" width="672" />
-由此我们发现递减到0的速度很快，从2阶开始，ACF便不再显著。这足以确保数据的平稳性。
-由此处理完毕，接下来处理失业率。</p>
+<p><img src="/blogs/crime_unemployment_VAR_files/figure-html/unnamed-chunk-7-1.png" width="672" /></p>
 <pre class="r"><code>Unemployment_Rate_data &lt;- read_excel(here::here(&quot;data&quot;,&quot;Unemployment_Rate.xlsx&quot;), sheet = 1)
 Unemployment_Rate &lt;- ts(Unemployment_Rate_data$`Unemployment, total (% of total labor force) (national estimate), USA`, frequency = 1, start = 1966,end=2018)
 plot(Unemployment_Rate)</code></pre>
@@ -194,7 +190,7 @@ plot(Unemployment_Rate)</code></pre>
 ##     0.4079 
 ## 
 ## Description:
-##  Sat Oct 16 16:16:41 2021 by user: 
+##  Tue Oct 19 19:02:30 2021 by user: 
 ## 
 ## 
 ## Title:
@@ -209,7 +205,7 @@ plot(Unemployment_Rate)</code></pre>
 ##     0.5912 
 ## 
 ## Description:
-##  Sat Oct 16 16:16:41 2021 by user: 
+##  Tue Oct 19 19:02:30 2021 by user: 
 ## 
 ## 
 ## Title:
@@ -224,8 +220,8 @@ plot(Unemployment_Rate)</code></pre>
 ##     0.6153 
 ## 
 ## Description:
-##  Sat Oct 16 16:16:41 2021 by user:</code></pre>
-<p>原始数据存在单位根！考虑取一阶差分！</p>
+##  Tue Oct 19 19:02:30 2021 by user:</code></pre>
+<p>The original data has a unit root! Consider taking the first difference.</p>
 <pre class="r"><code>unemployment_rate_diff = diff(Unemployment_Rate)
 plot(unemployment_rate_diff)</code></pre>
 <p><img src="/blogs/crime_unemployment_VAR_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
@@ -245,7 +241,7 @@ plot(unemployment_rate_diff)</code></pre>
 ##     0.01 
 ## 
 ## Description:
-##  Sat Oct 16 16:16:41 2021 by user:</code></pre>
+##  Tue Oct 19 19:02:30 2021 by user:</code></pre>
 <pre><code>## Warning in adfTest(unemployment_rate_diff, lag = i, type = &quot;nc&quot;): p-value
 ## smaller than printed p-value</code></pre>
 <pre><code>## 
@@ -261,7 +257,7 @@ plot(unemployment_rate_diff)</code></pre>
 ##     0.01 
 ## 
 ## Description:
-##  Sat Oct 16 16:16:41 2021 by user:</code></pre>
+##  Tue Oct 19 19:02:30 2021 by user:</code></pre>
 <pre><code>## Warning in adfTest(unemployment_rate_diff, lag = i, type = &quot;nc&quot;): p-value
 ## smaller than printed p-value</code></pre>
 <pre><code>## 
@@ -277,8 +273,8 @@ plot(unemployment_rate_diff)</code></pre>
 ##     0.01 
 ## 
 ## Description:
-##  Sat Oct 16 16:16:41 2021 by user:</code></pre>
-<p>不再具有单位根。</p>
+##  Tue Oct 19 19:02:30 2021 by user:</code></pre>
+<p>no more unit roots.</p>
 <pre class="r"><code>fit_unemployment_rate_diff &lt;- auto.arima(unemployment_rate_diff)
 fit_unemployment_rate_diff</code></pre>
 <pre><code>## Series: unemployment_rate_diff 
@@ -327,14 +323,14 @@ fit_unemployment_rate_diff</code></pre>
 ## 
 ## data:  unemployment_rate_diff
 ## X-squared = 12.135, df = 6, p-value = 0.05903</code></pre>
-<p>所有阶都能在0.1的显著性水平下拒绝数据为白噪声的原假设。</p>
-<p>用移民数据的模型拟合残差、失业率的差分、犯罪率的对数差分差拟合VAR</p>
+<p>All orders can reject the null hypothesis that the data is white noise at a significance level of 0.1.</p>
+<p>fit VAR</p>
 <pre class="r"><code>immi_residual_data &lt;- read_excel(here::here(&quot;data&quot;,&quot;data_immi.xlsx&quot;), sheet = 1)
 immi_residual_c_1 &lt;- ts(immi_residual_data$`resi_c`, frequency = 1, start = 1967,end=2018)
 
 immi_residual_c_2 &lt;- ts(immi_residual_data$`resi_c`, frequency = 1, start = 1991,end=2018)</code></pre>
 <pre class="r"><code>et1&lt;- cbind(immi_residual_c_1,unemployment_rate_diff)</code></pre>
-<p>选择合适的阶数</p>
+<p>choose orders</p>
 <pre class="r"><code>VARselect(et1, lag.max = 10, type = c(&quot;const&quot;, &quot;trend&quot;, &quot;both&quot;, &quot;none&quot;),
 season = NULL, exogen = NULL)</code></pre>
 <pre><code>## $selection
@@ -352,7 +348,6 @@ season = NULL, exogen = NULL)</code></pre>
 ## HQ(n)  2.512157e+01 2.507945e+01 2.522850e+01 2.527832e+01 2.539229e+01
 ## SC(n)  2.580298e+01 2.586570e+01 2.611958e+01 2.627423e+01 2.649303e+01
 ## FPE(n) 5.716787e+10 5.283084e+10 5.961480e+10 6.156066e+10 6.867074e+10</code></pre>
-<p>拟合VAR模型</p>
 <pre class="r"><code>outv_unem_1=VAR(et1, p=1, type=&quot;const&quot;)
 summary(outv_unem_1)</code></pre>
 <pre><code>## 
@@ -412,15 +407,14 @@ summary(outv_unem_1)</code></pre>
 ##                        immi_residual_c_1 unemployment_rate_diff
 ## immi_residual_c_1                1.00000               -0.05336
 ## unemployment_rate_diff          -0.05336                1.00000</code></pre>
-<p>模型的诊断</p>
+<p>model diagnostic</p>
 <pre class="r"><code>serial.test(outv_unem_1)</code></pre>
 <pre><code>## 
 ##  Portmanteau Test (asymptotic)
 ## 
 ## data:  Residuals of VAR object outv_unem_1
 ## Chi-squared = 63.991, df = 60, p-value = 0.3383</code></pre>
-<p>由此可见var模型的残差不具有序列相依性
-进行预测</p>
+<p>predict</p>
 <pre class="r"><code>predict(outv_unem_1, n.ahead=5, ci=0.95)</code></pre>
 <pre><code>## $immi_residual_c_1
 ##           fcst     lower    upper       CI

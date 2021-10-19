@@ -15,6 +15,7 @@ title: GARCH model application
 <script src="/rmarkdown-libs/header-attrs/header-attrs.js"></script>
 
 
+<p>This is an example of the application of [GARCH model] (<a href="https://machinelearningmastery.com/develop-arch-and-garch-models-for-time-series-forecasting-in-python/" class="uri">https://machinelearningmastery.com/develop-arch-and-garch-models-for-time-series-forecasting-in-python/</a>) on the world oil price and Saudi stock market price data. This code is from one of my previous research on the relationship between Brent oil price and Saudi stock market price.</p>
 <pre class="r"><code>data &lt;- read_excel(here::here(&quot;data&quot;,&quot;mydata.xlsx&quot;), sheet = 1)
 brent &lt;- ts(data$brent, frequency = 12, start = c(1998,11), end=c(2020,12))
 tasi &lt;-  ts(data$tasi, frequency = 12, start = c(1998,11), end=c(2020,12))
@@ -29,6 +30,7 @@ plot.ts(cbind(tasi.ret, brent.ret), plot.type = &quot;single&quot;, ylab = &quot
 legend(&quot;topleft&quot;, legend = c(&quot;TASI&quot;, &quot;Brent&quot;), col = 4:3, 
     lty = 1, bty = &quot;n&quot;)</code></pre>
 <p><img src="/blogs/garch_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<p>Testing for unit roots</p>
 <pre class="r"><code>adf.test(tasi.ret)</code></pre>
 <pre><code>## Warning in adf.test(tasi.ret): p-value smaller than printed p-value</code></pre>
 <pre><code>## 
@@ -45,6 +47,7 @@ legend(&quot;topleft&quot;, legend = c(&quot;TASI&quot;, &quot;Brent&quot;), col
 ## data:  brent.ret
 ## Dickey-Fuller = -6.5, Lag order = 6, p-value = 0.01
 ## alternative hypothesis: stationary</code></pre>
+<p>fitting a var model first to the two series</p>
 <pre class="r"><code>VARselect(cbind(tasi.ret,brent.ret), lag.max = 10, type = c(&quot;const&quot;, &quot;trend&quot;, &quot;both&quot;, &quot;none&quot;),
 season = NULL, exogen = NULL)</code></pre>
 <pre><code>## $selection
@@ -208,6 +211,7 @@ summary(varfit2)</code></pre>
 ## 
 ## data:  Residuals of VAR object varfit2
 ## Chi-squared = 254, df = 135, p-value = 3e-09</code></pre>
+<p>fitting a univariate normal GARCH(1,1) for each series, and assuming dynamic conditional correlation</p>
 <pre class="r"><code>vfit2 = varxfit(X=ret, p=2, exogen = NULL, robust = FALSE,
 gamma = 0.25, delta = 0.01, nc = 10, ns = 500, postpad = &quot;constant&quot;)
 
@@ -256,7 +260,7 @@ dccfit2</code></pre>
 ## Hannan-Quinn -4.4741
 ## 
 ## 
-## Elapsed time : 0.7138</code></pre>
+## Elapsed time : 0.7019</code></pre>
 <pre class="r"><code># univariate normal GARCH(1,1) for each series
 garch11.spec = ugarchspec(mean.model = list(armaOrder = c(0,0), include.mean = FALSE),variance.model = list(garchOrder = c(1,1), model = &quot;sGARCH&quot;),distribution.model = &quot;norm&quot;)
 # dcc specification - GARCH(1,1) for conditional correlations
@@ -304,7 +308,7 @@ dccfit22</code></pre>
 ## Hannan-Quinn -4.4741
 ## 
 ## 
-## Elapsed time : 0.4806</code></pre>
+## Elapsed time : 0.4555</code></pre>
 <pre class="r"><code>plot(dccfit2, which=1)</code></pre>
 <p><img src="/blogs/garch_files/figure-html/unnamed-chunk-13-1.png" width="672" /></p>
 <pre class="r"><code>plot(dccfit2, which=2)</code></pre>
@@ -359,6 +363,7 @@ plot(forecasts,which=1)</code></pre>
 <pre class="r"><code>par(mfrow = c(1, 1))</code></pre>
 <pre class="r"><code>resi2 = residuals(varfit2)
 #write.csv(resi2,file = &quot;/Users/hedwigzhao/Desktop/resi2.csv&quot;)</code></pre>
+<p>Do they really have DCC effects? the DCC test in r said yes.</p>
 <pre class="r"><code>DCCtest(resi2, garchOrder = c(1,1), n.lags = 1, solver = &quot;solnp&quot;, cluster = NULL, Z = NULL)</code></pre>
 <pre><code>## $H0
 ## [1] &quot;Constant Probability&quot;
@@ -368,6 +373,7 @@ plot(forecasts,which=1)</code></pre>
 ## 
 ## $statistic
 ## [1] 0.03774</code></pre>
+<p>Still we can also fit a CCC model to see the difference</p>
 <pre class="r"><code>## GARCH(1,1) ##
 
 # The following function is the filter for the GARCH(1,1) model.
@@ -664,12 +670,14 @@ covar &lt;- function(fit, alpha){
   
   return(CoVaR)
 }</code></pre>
+<p>Compute the CoVaR at 0.01 and 0.05 significance level for both models.</p>
 <pre class="r"><code># Compute the CoVaR at 0.01 and 0.05 significance level for both models.
 DCC_CoVaR_1 &lt;- covar(Fit_DCC, 0.01)
 DCC_CoVaR_5 &lt;- covar(Fit_DCC, 0.05)
 
 CCC_CoVaR_1 &lt;- covar(Fit_CCC, 0.01)
 CCC_CoVaR_5 &lt;- covar(Fit_CCC, 0.05)</code></pre>
+<p>plot of CoVaR for DCC</p>
 <pre class="r"><code>par(mfrow = c(2, 1))
 # Plot of CoVaR for DCC
 plot(y = DCC_CoVaR_1,

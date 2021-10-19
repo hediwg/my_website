@@ -1,0 +1,185 @@
+---
+categories:  
+- ""    #the front matter should be like the one found in, e.g., blog2.md. It cannot be like the normal Rmd we used
+- ""
+date: "2021-09-30"
+description: How has the CPI and its components changed over the last few years? # the title that will show up once someone gets to this page
+draft: false
+image: pic08.jpg # save picture in \static\img\blogs. Acceptable formats= jpg, jpeg, or png . Your iPhone pics wont work
+
+keywords: ""
+slug: cpi # slug is the shorthand URL address... no spaces plz
+title: How has the CPI and its components changed over the last few years?
+---
+
+```{r, setup, include=FALSE}
+knitr::opts_chunk$set(
+  message = FALSE, 
+  warning = FALSE, 
+  tidy=FALSE,     # display code as typed
+  size="small")   # slightly smaller font for code
+options(digits = 3)
+
+# default figure size
+knitr::opts_chunk$set(
+  fig.width=6.75, 
+  fig.height=6.75,
+  fig.align = "center"
+)
+```
+
+
+```{r load-libraries, include=FALSE}
+library(tidyverse)  # Load ggplot2, dplyr, and all the other tidyverse packages
+library(mosaic)
+library(ggthemes)
+library(lubridate)
+library(here)
+library(skimr)
+library(janitor)
+library(httr)
+library(readxl)
+library(vroom)
+library(tidyquant)
+library(rvest) # to scrape wikipedia page
+```
+
+
+# How has the CPI and its components changed over the last few years?
+
+```{r}
+library(rvest) # to scrape wikipedia page
+
+cpi_url <- "https://fredaccount.stlouisfed.org/public/datalist/843"
+
+
+#get tables that exist on URL
+tables <- cpi_url %>% 
+  read_html() %>% 
+  html_nodes(css="table")
+
+
+# parse HTML tables into a dataframe called djia. 
+# Use purr::map() to create a list of all tables in URL
+cpi <- map(tables, . %>% 
+               html_table(fill=TRUE)%>% 
+               clean_names())
+
+```
+
+```{r}
+table1 <- cpi[[2]] 
+tickers <- table1 %>% 
+  select(series_id) %>% 
+  pull()
+names <- table1 %>%
+  select(title, series_id) %>% 
+  mutate(name = str_sub(title,47,-22)) %>%
+  rename(symbol = series_id)
+```
+
+```{r}
+cpidatalist <- tq_get(tickers, get = "economic.data", from =  "2000-01-01") %>% 
+
+  # calculate yearly change in CPI by dividing current month by same month a year (or 12 months) earlier, minus 1
+  mutate(cpi_yoy_change = price/lag(price, 12) - 1)
+```
+
+```{r}
+glimpse(cpidatalist) # examine the structure of the resulting data frame
+#tq_get(get = "economic.data", from =  "2000-01-01")
+```
+```{r}
+cpidatalist_0 <- na.omit(cpidatalist)
+cpidatalist_0 <- merge(x=cpidatalist_0,y=names,by="symbol")
+
+cpidatalist_1 <- cpidatalist_0 %>%
+  filter(symbol == "CPIAUCSL") %>%
+  mutate(high_yoy = max(cpi_yoy_change))
+
+cpidatalist_2 <- cpidatalist_0 %>%
+  filter(symbol != "CPIAUCSL") %>%
+  group_by(symbol) %>%
+  mutate(high_yoy = max(cpi_yoy_change)) %>%
+  arrange(desc(high_yoy))
+
+cpidatalist_3 <- rbind(cpidatalist_1, cpidatalist_2) %>%
+  mutate(namef = factor(name, levels = unique(name)))
+```
+
+
+```{r}
+cpidatalist_3 %>%
+  ggplot(aes(x= date, y= cpi_yoy_change))+
+  geom_point(size = 0.5, aes(colour = factor(sign(cpi_yoy_change))))+
+  geom_smooth(size = 0.5)+
+  facet_wrap(~namef, scales = "free")+
+  labs( y = "YoY % Change", title= "Yearly change of US CPI (AII Items) and its components",subtitle = "YoY change being positive or negative \n Jan 2000 to Aug 2021", caption = "Data from St. Louis Fed FRED \n  https://fredaccount.stlouisfed.org/public/datalist/843")+
+  theme(legend.position="none")
+```
+
+This graphs is fine, but perhaps has too many sub-categories. You can find the [relative importance of components in the Consumer Price Indexes: U.S. city average, December 2020](https://www.bls.gov/cpi/tables/relative-importance/2020.htm) here. Can you choose a smaller subset of the components you have and only list the major categories (Housing, Transportation, Food and beverages, Medical care, Education and communication, Recreation, and Apparel), sorted according to their relative importance?
+
+```{r}
+importance_url <- "https://www.bls.gov/cpi/tables/relative-importance/2020.htm"
+
+
+#get tables that exist on URL
+tables_imp <- importance_url %>% 
+  read_html() %>% 
+  html_nodes(css="table")
+
+
+# parse HTML tables into a dataframe called djia. 
+# Use purr::map() to create a list of all tables in URL
+importance <- map(tables_imp, . %>% 
+               html_table(fill=TRUE)%>% 
+               clean_names())
+```
+```{r}
+importantnames <- c("Housing","Transportation","Food and Beverages", "Medical care", "Education and Communication", "Recreation" , "Apparel")
+
+name_and_tickers <- names %>% 
+  filter(name %in% importantnames)
+
+name_and_tickers[2,"name"] <- "Food and beverages"
+```
+
+```{r}
+imp_list <- importance[[1]][-1,] %>% 
+  mutate(cpiu = as.numeric(u_s_city_average),
+         cpiw = as.numeric(u_s_city_average_2)) %>%
+  filter(item_and_group %in% name_and_tickers$name )%>%
+  rename(name = item_and_group)
+
+imp_list<- merge(x=imp_list,y=name_and_tickers,by="name")
+
+imp_tickers <- imp_list%>%
+select(symbol) %>% 
+  pull()
+  
+
+imp_cpidatalist <- tq_get(imp_tickers, get = "economic.data", from =  "2000-01-01") %>% 
+
+  # calculate yearly change in CPI by dividing current month by same month a year (or 12 months) earlier, minus 1
+  mutate(cpi_yoy_change = price/lag(price, 12) - 1)
+```
+
+```{r}
+imp_cpidatalist_1 <- na.omit(imp_cpidatalist)
+imp_cpidatalist_2 <- merge(x=imp_cpidatalist_1,y=imp_list,by="symbol") %>%
+  arrange(desc(cpiu)) %>%
+  mutate(namef = factor(name, levels = unique(name)))
+```
+
+```{r}
+imp_cpidatalist_2 %>%
+  ggplot(aes(x= date, y= cpi_yoy_change))+
+  geom_point(size = 0.5, aes(colour = factor(sign(cpi_yoy_change))))+
+  geom_smooth(size = 0.5)+
+  facet_wrap(~namef, scales = "free")+
+  labs( y = "YoY % Change", title= "Yearly change of important US CPI components",subtitle = "YoY change being positive or negative \n Jan 2000 to Aug 2021", caption = "Data from St. Louis Fed FRED \n  https://fredaccount.stlouisfed.org/public/datalist/843")+
+  theme(legend.position="none")
+```
+
+

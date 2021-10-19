@@ -12,6 +12,8 @@ slug: garch_model # slug is the shorthand URL address... no spaces plz
 title: GARCH model application
 ---
 
+This is an example of the application of [GARCH model] (https://machinelearningmastery.com/develop-arch-and-garch-models-for-time-series-forecasting-in-python/) on the world oil price and Saudi stock market price data. This code is from one of my previous research on the relationship between Brent oil price and Saudi stock market price.
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -50,11 +52,13 @@ legend("topleft", legend = c("TASI", "Brent"), col = 4:3,
     lty = 1, bty = "n")
 ```
 
+Testing for unit roots
 ```{r}
 adf.test(tasi.ret)
 adf.test(brent.ret)
 ```
 
+fitting a var model first to the two series
 ```{r}
 VARselect(cbind(tasi.ret,brent.ret), lag.max = 10, type = c("const", "trend", "both", "none"),
 season = NULL, exogen = NULL)
@@ -86,6 +90,7 @@ serial.test(varfit2,lags.pt = 5, type = "PT.asymptotic")
 arch.test(varfit2, lags.multi = 15, multivariate.only = TRUE)
 ```
 
+fitting a univariate normal GARCH(1,1) for each series, and assuming dynamic conditional correlation
 ```{r}
 vfit2 = varxfit(X=ret, p=2, exogen = NULL, robust = FALSE,
 gamma = 0.25, delta = 0.01, nc = 10, ns = 500, postpad = "constant")
@@ -147,10 +152,12 @@ resi2 = residuals(varfit2)
 #write.csv(resi2,file = "/Users/hedwigzhao/Desktop/resi2.csv")
 ```
 
+Do they really have DCC effects? the DCC test in r said yes.
 ```{r}
 DCCtest(resi2, garchOrder = c(1,1), n.lags = 1, solver = "solnp", cluster = NULL, Z = NULL)
 ```
 
+Still we can also fit a CCC model to see the difference
 ```{r}
 ## GARCH(1,1) ##
 
@@ -457,6 +464,8 @@ covar <- function(fit, alpha){
 }
 ```
 
+
+Compute the CoVaR at 0.01 and 0.05 significance level for both models.
 ```{r}
 # Compute the CoVaR at 0.01 and 0.05 significance level for both models.
 DCC_CoVaR_1 <- covar(Fit_DCC, 0.01)
@@ -466,6 +475,8 @@ CCC_CoVaR_1 <- covar(Fit_CCC, 0.01)
 CCC_CoVaR_5 <- covar(Fit_CCC, 0.05)
 ```
 
+
+plot of CoVaR for DCC
 ```{r}
 par(mfrow = c(2, 1))
 # Plot of CoVaR for DCC

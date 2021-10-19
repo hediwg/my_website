@@ -15,6 +15,7 @@ title: ARDL model application
 <script src="/rmarkdown-libs/header-attrs/header-attrs.js"></script>
 
 
+<p>This is an example of the application of [ARDl model] (<a href="https://cran.r-project.org/web/packages/ARDL/index.html" class="uri">https://cran.r-project.org/web/packages/ARDL/index.html</a>) on the world oil price and Saudi stock market price data. This code is from one of my previous research on the relationship between Brent oil price and Saudi stock market price.</p>
 <pre class="r"><code>data &lt;- read_excel(here::here(&quot;data&quot;,&quot;mydata.xlsx&quot;), sheet = 1)
 brent &lt;- ts(log(data$brent), frequency = 12, start = c(1998,11), end=c(2020,12))
 wti &lt;- ts(log(data$wti), frequency = 12, start = c(1998,11), end=c(2020,12))
@@ -60,6 +61,7 @@ plot.ts(cbind(tasi, brent, wti), plot.type = &quot;single&quot;, ylab = &quot;&q
 legend(&quot;topleft&quot;, legend = c(&quot;TASI&quot;, &quot;Brent&quot;, &quot;Wti&quot;), col = 4:3, 
     lty = 1, bty = &quot;n&quot;)</code></pre>
 <p><img src="/blogs/ardl_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
+<p>Testing for granger causality</p>
 <pre class="r"><code>grangertest(brent.ret~tasi.ret, order = 2, na.action = na.omit)</code></pre>
 <pre><code>## Granger causality test
 ## 
@@ -78,6 +80,7 @@ legend(&quot;topleft&quot;, legend = c(&quot;TASI&quot;, &quot;Brent&quot;, &quo
 ##   Res.Df Df      F Pr(&gt;F)
 ## 1    258                 
 ## 2    260 -2 1.3072 0.2724</code></pre>
+<p>Choosing a model</p>
 <pre class="r"><code>modelslinearbt &lt;- auto_ardl(brent ~ tasi , data = ts, max_order = 5)</code></pre>
 <pre><code>## Warning: The `x` argument of `as_tibble.matrix()` must have unique column names if `.name_repair` is omitted as of tibble 2.0.0.
 ## Using compatibility `.name_repair`.</code></pre>
@@ -153,13 +156,14 @@ summary(uecm_32)</code></pre>
 ## Multiple R-squared:  0.2082, Adjusted R-squared:  0.1897 
 ## F-statistic: 11.22 on 6 and 256 DF,  p-value: 4.034e-11</code></pre>
 <pre class="r"><code>resi_u &lt;- residuals(uecm_32)</code></pre>
+<p>Testing for residual auto correlation</p>
 <pre class="r"><code>Box.test(resi_u, type = &quot;Ljung-Box&quot;)</code></pre>
 <pre><code>## 
 ##  Box-Ljung test
 ## 
 ## data:  resi_u
 ## X-squared = 0.035025, df = 1, p-value = 0.8515</code></pre>
-<p>无法reject the null 说明没有显著的自相关性</p>
+<p>cannot reject the null, no auto correlation</p>
 <pre class="r"><code>plot(uecm_32)</code></pre>
 <p><img src="/blogs/ardl_files/figure-html/unnamed-chunk-8-1.png" width="672" /><img src="/blogs/ardl_files/figure-html/unnamed-chunk-8-2.png" width="672" /><img src="/blogs/ardl_files/figure-html/unnamed-chunk-8-3.png" width="672" /><img src="/blogs/ardl_files/figure-html/unnamed-chunk-8-4.png" width="672" /></p>
 <pre class="r"><code>recm_32 &lt;- recm(uecm_32, case = 2)
@@ -190,6 +194,7 @@ summary(recm_32)</code></pre>
 ##   (0 observations deleted due to missingness)
 ## Multiple R-squared:  0.2104, Adjusted R-squared:  0.1951 
 ## F-statistic: 13.75 on 5 and 258 DF,  p-value: 6.527e-12</code></pre>
+<p>Testing for cointegration</p>
 <pre class="r"><code>bounds_f_test(ardl_32, case = 2)</code></pre>
 <pre><code>## 
 ##  Bounds F-test (Wald) for no cointegration
@@ -211,6 +216,7 @@ summary(recm_32)</code></pre>
 ## null values:
 ##    k    T 
 ##    1 1000</code></pre>
+<p>Deciding whether to include a trend</p>
 <pre class="r"><code>reg&lt;-nardl(brent~tasi,data=ts,ic=&quot;aic&quot;,maxlag = T, graph = F, case =5)
 summary(reg)</code></pre>
 <pre><code>## ==============================================================

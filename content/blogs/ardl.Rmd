@@ -12,6 +12,8 @@ slug: ardl_model # slug is the shorthand URL address... no spaces plz
 title: ARDL model application
 ---
 
+This is an example of the application of [ARDl model] (https://cran.r-project.org/web/packages/ARDL/index.html) on the world oil price and Saudi stock market price data. This code is from one of my previous research on the relationship between Brent oil price and Saudi stock market price.
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(readxl)
@@ -70,11 +72,13 @@ legend("topleft", legend = c("TASI", "Brent", "Wti"), col = 4:3,
     lty = 1, bty = "n")
 ```
 
+Testing for granger causality
 ```{r}
 grangertest(brent.ret~tasi.ret, order = 2, na.action = na.omit)
 grangertest(tasi.ret~brent.ret, order = 2, na.action = na.omit)
 ```
 
+Choosing a model
 ```{r}
 modelslinearbt <- auto_ardl(brent ~ tasi , data = ts, max_order = 5)
 modelslinearbt$top_orders
@@ -90,10 +94,11 @@ summary(uecm_32)
 resi_u <- residuals(uecm_32)
 ```
 
+Testing for residual auto correlation
 ```{r}
 Box.test(resi_u, type = "Ljung-Box")
 ```
-无法reject the null 说明没有显著的自相关性
+cannot reject the null, no auto correlation
 
 ```{r}
 plot(uecm_32)
@@ -105,6 +110,7 @@ recm_32 <- recm(uecm_32, case = 2)
 summary(recm_32)
 ```
 
+Testing for cointegration
 ```{r}
 bounds_f_test(ardl_32, case = 2)
 ```
@@ -113,7 +119,7 @@ bounds_f_test(ardl_32, case = 2)
 bounds_t_test(uecm_32, case = 3, alpha = 0.05)
 ```
 
-
+Deciding whether to include a trend
 ```{r}
 reg<-nardl(brent~tasi,data=ts,ic="aic",maxlag = T, graph = F, case =5)
 summary(reg)

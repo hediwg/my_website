@@ -29,7 +29,7 @@ params:
         title: Phone
   custom_css: []
   custom_js: []
-  description: Your description
+  description: 
   error404:
     heading: Page couldn't be found
     text: Please visit [this page](/)
@@ -73,8 +73,8 @@ params:
         url: blogs
       - name: Generic Blog
         url: blogs/ardl_model
-      - name: Elements
-        url: elements.html
+#      - name: Elements
+#        url: elements.html
     menu: Menu
     subtitle: Xinyue Zhao
     title: Portfolio Website
@@ -83,16 +83,20 @@ params:
     showcase:
       - image: lbs.jpg
         subtitle: 
-        title: Does the yield curve flatten before recessions?
-        url: blogs/yield_curve
-      - image: pic02.jpg
-        subtitle: 
         title: About me and my work
         url: blogs/pre_programme_assignment
+      - image: pic02.jpg
+        subtitle: 
+        title: Does the yield curve flatten before recessions?
+        url: blogs/yield_curve
       - image: pic03.jpg
         subtitle: 
-        title: A time series data description example
-        url: blogs/data_decription_example
+        title: How has the CPI and its components changed over the last few years?
+        url: blogs/cpi
+      - image: pic06.jpg
+        subtitle: 
+        title: VAR model application
+        url: blogs/var_model
       - image: pic04.jpg
         subtitle: 
         title: ARDL model application
@@ -101,10 +105,7 @@ params:
         subtitle: 
         title: GARCH model application
         url: blogs/garch_model
-      - image: pic06.jpg
-        subtitle: 
-        title: VAR model application
-        url: blogs/var_model
+
   two:
     buttonText: Get Started
     enable: yes
