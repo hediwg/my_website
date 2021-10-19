@@ -128,7 +128,8 @@ plot(predict(outv_unem_1, n.ahead=5, ci=0.95))
 ```{r}
 et2<- cbind(immi_residual_c_2,crime_rate_log_diff)
 ```
-选择合适的阶数
+
+choose model
 ```{r}
 VARselect(et2, lag.max = 8, type = c("const", "trend", "both", "none"),
 season = NULL, exogen = NULL)
@@ -137,17 +138,17 @@ season = NULL, exogen = NULL)
 outv_crime_3=VAR(et2, p=3, type="const")
 summary(outv_crime_3)
 ```
-模型的诊断
+model diagnositic
 ```{r}
 serial.test(outv_crime_3)
 ```
-由此可见var模型的残差不具有序列相依性
-进行预测
+
+predict
 ```{r}
 plot(predict(outv_crime_3, n.ahead=5, ci=0.95))
 plot(immi_residual_c_2)
 ```
-如果不把失业率、犯罪率和移民数据看成一个整体的系统，而是分别把失业率和犯罪率看成外生变量，是否会增加系数的显著性呢？
+If we do not regard the unemployment rate, crime rate, and immigration data as a whole system, but treat the unemployment rate and crime rate as exogenous variables, will it increase the significance of the coefficient?
 ```{r}
 outv_crime_3$varresult$immi_residual_c_2$fitted.values
 ```

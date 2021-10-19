@@ -34,7 +34,7 @@ plot(crime_rate)</code></pre>
 ##     0.4044 
 ## 
 ## Description:
-##  Tue Oct 19 19:02:30 2021 by user: 
+##  Tue Oct 19 19:27:18 2021 by user: 
 ## 
 ## 
 ## Title:
@@ -49,7 +49,7 @@ plot(crime_rate)</code></pre>
 ##     0.5138 
 ## 
 ## Description:
-##  Tue Oct 19 19:02:30 2021 by user: 
+##  Tue Oct 19 19:27:18 2021 by user: 
 ## 
 ## 
 ## Title:
@@ -64,7 +64,7 @@ plot(crime_rate)</code></pre>
 ##     0.4645 
 ## 
 ## Description:
-##  Tue Oct 19 19:02:30 2021 by user:</code></pre>
+##  Tue Oct 19 19:27:18 2021 by user:</code></pre>
 <p>This shows that the crime rate data has unit roots. Next, to test the stationarity, consider taking the logarithm first, and then taking the difference to see if it can become stable.</p>
 <pre class="r"><code>crime_rate_log_diff&lt;-diff(log(crime_rate))
 plot(crime_rate_log_diff)</code></pre>
@@ -83,7 +83,7 @@ plot(crime_rate_log_diff)</code></pre>
 ##     0.02918 
 ## 
 ## Description:
-##  Tue Oct 19 19:02:30 2021 by user:</code></pre>
+##  Tue Oct 19 19:27:18 2021 by user:</code></pre>
 <p>taking the logarithm first, and then taking the difference makes it pass the DF test.</p>
 <pre class="r"><code>for(i in 1:12) print(Box.test(crime_rate_log_diff,type=&quot;Ljung-Box&quot;,lag=i))</code></pre>
 <pre><code>## 
@@ -190,7 +190,7 @@ plot(Unemployment_Rate)</code></pre>
 ##     0.4079 
 ## 
 ## Description:
-##  Tue Oct 19 19:02:30 2021 by user: 
+##  Tue Oct 19 19:27:18 2021 by user: 
 ## 
 ## 
 ## Title:
@@ -205,7 +205,7 @@ plot(Unemployment_Rate)</code></pre>
 ##     0.5912 
 ## 
 ## Description:
-##  Tue Oct 19 19:02:30 2021 by user: 
+##  Tue Oct 19 19:27:18 2021 by user: 
 ## 
 ## 
 ## Title:
@@ -220,7 +220,7 @@ plot(Unemployment_Rate)</code></pre>
 ##     0.6153 
 ## 
 ## Description:
-##  Tue Oct 19 19:02:30 2021 by user:</code></pre>
+##  Tue Oct 19 19:27:18 2021 by user:</code></pre>
 <p>The original data has a unit root! Consider taking the first difference.</p>
 <pre class="r"><code>unemployment_rate_diff = diff(Unemployment_Rate)
 plot(unemployment_rate_diff)</code></pre>
@@ -241,7 +241,7 @@ plot(unemployment_rate_diff)</code></pre>
 ##     0.01 
 ## 
 ## Description:
-##  Tue Oct 19 19:02:30 2021 by user:</code></pre>
+##  Tue Oct 19 19:27:18 2021 by user:</code></pre>
 <pre><code>## Warning in adfTest(unemployment_rate_diff, lag = i, type = &quot;nc&quot;): p-value
 ## smaller than printed p-value</code></pre>
 <pre><code>## 
@@ -257,7 +257,7 @@ plot(unemployment_rate_diff)</code></pre>
 ##     0.01 
 ## 
 ## Description:
-##  Tue Oct 19 19:02:30 2021 by user:</code></pre>
+##  Tue Oct 19 19:27:18 2021 by user:</code></pre>
 <pre><code>## Warning in adfTest(unemployment_rate_diff, lag = i, type = &quot;nc&quot;): p-value
 ## smaller than printed p-value</code></pre>
 <pre><code>## 
@@ -273,7 +273,7 @@ plot(unemployment_rate_diff)</code></pre>
 ##     0.01 
 ## 
 ## Description:
-##  Tue Oct 19 19:02:30 2021 by user:</code></pre>
+##  Tue Oct 19 19:27:18 2021 by user:</code></pre>
 <p>no more unit roots.</p>
 <pre class="r"><code>fit_unemployment_rate_diff &lt;- auto.arima(unemployment_rate_diff)
 fit_unemployment_rate_diff</code></pre>
@@ -434,7 +434,7 @@ summary(outv_unem_1)</code></pre>
 <pre class="r"><code>plot(predict(outv_unem_1, n.ahead=5, ci=0.95))</code></pre>
 <p><img src="/blogs/crime_unemployment_VAR_files/figure-html/unnamed-chunk-19-1.png" width="672" /></p>
 <pre class="r"><code>et2&lt;- cbind(immi_residual_c_2,crime_rate_log_diff)</code></pre>
-<p>选择合适的阶数</p>
+<p>choose model</p>
 <pre class="r"><code>VARselect(et2, lag.max = 8, type = c(&quot;const&quot;, &quot;trend&quot;, &quot;both&quot;, &quot;none&quot;),
 season = NULL, exogen = NULL)</code></pre>
 <pre><code>## $selection
@@ -519,20 +519,19 @@ summary(outv_crime_3)</code></pre>
 ##                     immi_residual_c_2 crime_rate_log_diff
 ## immi_residual_c_2              1.0000              0.3606
 ## crime_rate_log_diff            0.3606              1.0000</code></pre>
-<p>模型的诊断</p>
+<p>model diagnositic</p>
 <pre class="r"><code>serial.test(outv_crime_3)</code></pre>
 <pre><code>## 
 ##  Portmanteau Test (asymptotic)
 ## 
 ## data:  Residuals of VAR object outv_crime_3
 ## Chi-squared = 29.013, df = 52, p-value = 0.9959</code></pre>
-<p>由此可见var模型的残差不具有序列相依性
-进行预测</p>
+<p>predict</p>
 <pre class="r"><code>plot(predict(outv_crime_3, n.ahead=5, ci=0.95))</code></pre>
 <p><img src="/blogs/crime_unemployment_VAR_files/figure-html/unnamed-chunk-24-1.png" width="672" /></p>
 <pre class="r"><code>plot(immi_residual_c_2)</code></pre>
 <p><img src="/blogs/crime_unemployment_VAR_files/figure-html/unnamed-chunk-24-2.png" width="672" />
-如果不把失业率、犯罪率和移民数据看成一个整体的系统，而是分别把失业率和犯罪率看成外生变量，是否会增加系数的显著性呢？</p>
+If we do not regard the unemployment rate, crime rate, and immigration data as a whole system, but treat the unemployment rate and crime rate as exogenous variables, will it increase the significance of the coefficient?</p>
 <pre class="r"><code>outv_crime_3$varresult$immi_residual_c_2$fitted.values</code></pre>
 <pre><code>##            1            2            3            4            5            6 
 ##   74559.9105   23940.0431 -127499.7725  -15780.8503   19325.9705  -17601.9528 
